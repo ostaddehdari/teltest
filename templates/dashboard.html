@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TelTest Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark small">T</div>
+      <div>
+        <strong>TelTest</strong>
+        <small>Telethon Control</small>
+      </div>
+    </div>
+
+    <nav class="nav-list">
+      <button class="nav-item active" data-panel="dashboard">داشبورد</button>
+      <button class="nav-item" data-panel="jobs">جاب‌ها</button>
+      <button class="nav-item" data-panel="posts">پست‌های استخراجی</button>
+      <button class="nav-item" data-panel="accounts">اکانت‌های تلگرام</button>
+      <button class="nav-item" data-panel="channels">کانال‌ها</button>
+      <button class="nav-item" data-panel="logs">لاگ‌ها</button>
+      <button class="nav-item" data-panel="settings">تنظیمات</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <span class="status-dot"></span>
+        <span>{{ username }}</span>
+      </div>
+      <form method="post" action="{{ url_for('logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn ghost full">خروج</button>
+      </form>
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <button class="menu-button" id="menuButton" aria-label="منو">☰</button>
+      <div>
+        <h1 id="pageTitle">داشبورد</h1>
+        <p>نسخه {{ version }} · Stage 01</p>
+      </div>
+      <div class="health-pill"><span class="status-dot"></span> سیستم آماده</div>
+    </header>
+
+    <section class="panel active" data-panel-content="dashboard">
+      <div class="cards-grid">
+        <article class="stat-card"><span>اکانت‌های متصل</span><strong>{{ stats.accounts }}</strong><small>Stage 02</small></article>
+        <article class="stat-card"><span>کانال‌ها</span><strong>{{ stats.channels }}</strong><small>Stage 02</small></article>
+        <article class="stat-card"><span>جاب‌ها</span><strong>{{ stats.jobs }}</strong><small>Stage 03</small></article>
+        <article class="stat-card"><span>پست‌ها</span><strong>{{ stats.posts }}</strong><small>Stage 03</small></article>
+        <article class="stat-card"><span>ارسال موفق</span><strong>{{ stats.forwarded }}</strong><small>Stage 04</small></article>
+        <article class="stat-card"><span>خطا</span><strong>{{ stats.failed }}</strong><small>Stage 04</small></article>
+      </div>
+
+      <div class="content-grid">
+        <article class="surface">
+          <div class="surface-head">
+            <div>
+              <h2>وضعیت پروژه</h2>
+              <p>Stage 01 از 05</p>
+            </div>
+            <span class="badge success">فعال</span>
+          </div>
+          <div class="progress"><span style="width:20%"></span></div>
+          <ul class="check-list">
+            <li class="done">Flask Application</li>
+            <li class="done">Login بدون دیتابیس</li>
+            <li class="done">Single Page Dashboard</li>
+            <li class="done">Nginx /teltest</li>
+            <li>Telethon Account Manager</li>
+            <li>Job & Transfer Engine</li>
+          </ul>
+        </article>
+
+        <article class="surface">
+          <div class="surface-head"><div><h2>اجرای بعدی</h2><p>Stage 02</p></div></div>
+          <h3>اتصال حساب‌های تلگرام</h3>
+          <p class="muted">افزودن API ID/API Hash، شماره تلفن، دریافت کد وریفای، 2FA، ذخیره Session و دریافت Dialog/Channelها.</p>
+          <button class="btn primary" data-open-panel="accounts">مشاهده بخش اکانت‌ها</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" data-panel-content="jobs">
+      <div class="empty-state"><h2>جاب‌ها</h2><p>در Stage 03 ساخت، اجرا و تاریخچه Job فعال می‌شود.</p><span class="badge">Coming in Stage 03</span></div>
+    </section>
+
+    <section class="panel" data-panel-content="posts">
+      <div class="empty-state"><h2>پست‌های استخراجی</h2><p>ذخیره اختیاری پیام‌های استخراج‌شده در Stage 03 اضافه می‌شود.</p><span class="badge">Coming in Stage 03</span></div>
+    </section>
+
+    <section class="panel" data-panel-content="accounts">
+      <div class="surface">
+        <div class="surface-head"><div><h2>اکانت‌های تلگرام</h2><p>اتصال از طریق Telethon</p></div><span class="badge">Stage 02</span></div>
+        <p class="muted">در ورک بعدی فرم شماره تلفن، Send Code، Verify، 2FA و مدیریت Session در همین صفحه فعال می‌شود.</p>
+      </div>
+    </section>
+
+    <section class="panel" data-panel-content="channels">
+      <div class="empty-state"><h2>کانال‌ها</h2><p>کانال‌ها و گروه‌های هر اکانت در Stage 02 از Telegram دریافت می‌شوند.</p><span class="badge">Coming in Stage 02</span></div>
+    </section>
+
+    <section class="panel" data-panel-content="logs">
+      <div class="empty-state"><h2>لاگ‌ها</h2><p>Live Job Logs در Stage 05 اضافه خواهد شد.</p><span class="badge">Coming in Stage 05</span></div>
+    </section>
+
+    <section class="panel" data-panel-content="settings">
+      <div class="surface">
+        <div class="surface-head"><div><h2>تنظیمات</h2><p>پیکربندی برنامه</p></div></div>
+        <div class="settings-row"><span>Base URL</span><code>/teltest</code></div>
+        <div class="settings-row"><span>Internal Port</span><code>18870</code></div>
+        <div class="settings-row"><span>Storage</span><code>Stage 03 / SQLite</code></div>
+        <div class="settings-row"><span>Telethon</span><code>1.45.0</code></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

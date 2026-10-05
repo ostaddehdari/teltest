@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ورود | TelTest</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <div class="brand-mark">T</div>
+    <h1>TelTest</h1>
+    <p class="muted">پنل آزمایش Telethon و سنجش سرعت انتقال</p>
+
+    {% if error %}
+      <div class="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>نام کاربری</label>
+      <input name="username" type="text" required autofocus autocomplete="username">
+
+      <label>رمز عبور</label>
+      <input name="password" type="password" required autocomplete="current-password">
+
+      <button class="btn primary full" type="submit">ورود به پنل</button>
+    </form>
+
+    <div class="version">v{{ version }} · Stage 01</div>
+  </main>
+</body>
+</html>
