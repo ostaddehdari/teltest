@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.4.2",
+    "0.5.0",
 )
 
 ADMIN_USERNAME = os.getenv(
@@ -1057,7 +1057,7 @@ def health():
         ok=True,
         app="teltest",
         version=VERSION,
-        stage="04",
+        stage="05",
         status="ready",
         telegram_configured=bool(
             config
@@ -2156,7 +2156,19 @@ init_external_mirrors(
     telegram_client=telegram_client,
     account_get=account_get,
 )
+
 # TELTEST_EXTERNAL_MIRROR_END
+
+
+# TELTEST_CORE_V2_START
+from core_v2 import init_core_v2
+
+init_core_v2(
+    app=app,
+    login_required=login_required,
+)
+# TELTEST_CORE_V2_END
+
 
 
 
