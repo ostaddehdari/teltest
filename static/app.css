@@ -875,3 +875,288 @@ button, input { font: inherit; }
     }
 
 }
+
+
+/* ==========================================================
+   TELTEST-STAGE03
+   ========================================================== */
+
+.stage03-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        minmax(0,1.35fr)
+        minmax(280px,.65fr);
+
+    gap:
+        18px;
+
+    margin-bottom:
+        18px;
+
+}
+
+
+.stage03-jobs-box {
+
+    margin-top:
+        0;
+
+}
+
+
+.stage03-radio-row {
+
+    display:
+        flex;
+
+    flex-wrap:
+        wrap;
+
+    gap:
+        12px;
+
+}
+
+
+.stage03-radio-row label {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+
+    background:
+        #f8fafc;
+
+    border:
+        1px solid
+        var(--line);
+
+    border-radius:
+        10px;
+
+    padding:
+        11px 13px;
+
+    cursor:
+        pointer;
+
+}
+
+
+.stage03-info {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(2,1fr);
+
+    gap:
+        12px;
+
+    margin-top:
+        20px;
+
+}
+
+
+.stage03-info div {
+
+    background:
+        #f8fafc;
+
+    border:
+        1px solid
+        var(--line);
+
+    border-radius:
+        12px;
+
+    padding:
+        15px;
+
+}
+
+
+.stage03-info span {
+
+    display:
+        block;
+
+    color:
+        var(--muted);
+
+    font-size:
+        11px;
+
+}
+
+
+.stage03-info strong {
+
+    display:
+        block;
+
+    margin-top:
+        8px;
+
+    font-size:
+        15px;
+
+}
+
+
+.stage03-joined {
+
+    display:
+        block;
+
+    width:
+        fit-content;
+
+    margin-top:
+        6px;
+
+    background:
+        #ecfdf5;
+
+    color:
+        #047857;
+
+    padding:
+        3px 6px;
+
+    border-radius:
+        5px;
+
+    font-size:
+        9px;
+
+}
+
+
+.stage03-error {
+
+    margin-top:
+        7px;
+
+    max-width:
+        220px;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+    color:
+        #be123c;
+
+    font-size:
+        10px;
+
+    direction:
+        ltr;
+
+    text-align:
+        left;
+
+}
+
+
+.danger-badge {
+
+    background:
+        #fff1f2 !important;
+
+    color:
+        #be123c !important;
+
+}
+
+
+.stage03-run-button {
+
+    white-space:
+        nowrap;
+
+}
+
+
+.stage03-post-text {
+
+    min-width:
+        280px;
+
+    max-width:
+        500px;
+
+    white-space:
+        normal;
+
+    line-height:
+        1.8;
+
+}
+
+
+.stage03-post-head {
+
+    align-items:
+        flex-end;
+
+}
+
+
+@media (max-width:900px) {
+
+    .stage03-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .stage03-post-head {
+
+        align-items:
+            stretch;
+
+        flex-direction:
+            column;
+
+    }
+
+}
+
+
+@media (max-width:620px) {
+
+    .stage03-info {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .stage03-radio-row {
+
+        flex-direction:
+            column;
+
+    }
+
+}

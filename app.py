@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.2.1",
+    "0.3.2",
 )
 
 ADMIN_USERNAME = os.getenv(
@@ -1057,7 +1057,7 @@ def health():
         ok=True,
         app="teltest",
         version=VERSION,
-        stage="02",
+        stage="03",
         status="ready",
         telegram_configured=bool(
             config
@@ -2102,6 +2102,19 @@ def api_channels():
         count=len(items),
     )
 
+
+
+# TELTEST_STAGE03_START
+from job_engine import init_jobs
+
+init_jobs(
+    app=app,
+    login_required=login_required,
+    api_post_required=api_post_required,
+    telegram_client=telegram_client,
+    account_get=account_get,
+)
+# TELTEST_STAGE03_END
 
 # ============================================================
 # ERRORS

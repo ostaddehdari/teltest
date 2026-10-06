@@ -1,54 +1,60 @@
 # TelTest
 
-Single-page Flask + Telethon control panel.
+Flask + Telethon control panel.
+
+## Current version
+
+`v0.3.0`
 
 ## URL
 
 `https://srun.ir/teltest/`
 
-## Current Version
+## Stage 01
 
-`v0.2.0`
+- Flask
+- Login
+- Single Page Dashboard
+- Nginx
+- Gunicorn/systemd
 
-## Completed
+## Stage 02
 
-### Stage 01
+- Telegram API settings
+- Multi-account Telethon sessions
+- Phone verification
+- Telegram 2FA
+- Channel/group discovery
 
-- Flask application
-- Login without user database
-- RTL single-page dashboard
-- Nginx `/teltest`
-- Gunicorn + systemd
+## Stage 03
 
-### Stage 02
+- Create Jobs
+- Select connected Telegram account
+- Source by username, t.me link or known Telegram ID
+- Auto-join source channel when required
+- Private invite link support
+- Destination resolution
+- Extract up to 5000 recent messages
+- Save extracted posts to SQLite
+- No-save extraction mode
+- Extraction timing
+- Job history
+- Extracted posts UI
 
-- Telegram API ID / API Hash settings
-- Add Telegram account by phone
-- Send verification code
-- Verify login code
-- Telegram 2FA support
-- Persistent Telethon session per account
-- Discover channels and groups
-- Refresh dialogs
-- Multiple Telegram accounts
+## Runtime data
 
-## Runtime storage
+Sensitive data is outside Git:
 
-Sensitive runtime data is outside Git:
-
-- Database: `/var/lib/teltest/data/`
-- Telethon sessions: `/var/lib/teltest/sessions/`
-- Environment: `/etc/teltest/teltest.env`
-
-Telegram API Hash and session files must not be committed.
+- `/var/lib/teltest/data`
+- `/var/lib/teltest/sessions`
+- `/var/lib/teltest/locks`
+- `/etc/teltest/teltest.env`
 
 ## Next
 
-Stage 03:
+Stage 04 adds:
 
-- Jobs
-- Source channel
-- Join source
-- Destination channel
-- Message extraction
-- Optional post persistence
+- Native Forward
+- Copy without forward attribution
+- Transfer timer
+- FloodWait retry/resume
