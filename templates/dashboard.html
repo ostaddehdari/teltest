@@ -1,126 +1,948 @@
 <!doctype html>
+
 <html lang="fa" dir="rtl">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TelTest Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width,initial-scale=1"
+    >
+
+    <meta
+        name="csrf-token"
+        content="{{ csrf_token() }}"
+    >
+
+    <title>
+        TelTest Dashboard
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='app.css') }}"
+    >
+
 </head>
+
+
 <body class="app-shell">
-  <aside class="sidebar" id="sidebar">
+
+
+<aside
+    class="sidebar"
+    id="sidebar"
+>
+
     <div class="sidebar-brand">
-      <div class="brand-mark small">T</div>
-      <div>
-        <strong>TelTest</strong>
-        <small>Telethon Control</small>
-      </div>
+
+        <div class="brand-mark small">
+            T
+        </div>
+
+        <div>
+
+            <strong>
+                TelTest
+            </strong>
+
+            <small>
+                Telethon Control
+            </small>
+
+        </div>
+
     </div>
+
 
     <nav class="nav-list">
-      <button class="nav-item active" data-panel="dashboard">داشبورد</button>
-      <button class="nav-item" data-panel="jobs">جاب‌ها</button>
-      <button class="nav-item" data-panel="posts">پست‌های استخراجی</button>
-      <button class="nav-item" data-panel="accounts">اکانت‌های تلگرام</button>
-      <button class="nav-item" data-panel="channels">کانال‌ها</button>
-      <button class="nav-item" data-panel="logs">لاگ‌ها</button>
-      <button class="nav-item" data-panel="settings">تنظیمات</button>
+
+        <button
+            class="nav-item active"
+            data-panel="dashboard"
+        >
+            داشبورد
+        </button>
+
+        <button
+            class="nav-item"
+            data-panel="jobs"
+        >
+            جاب‌ها
+        </button>
+
+        <button
+            class="nav-item"
+            data-panel="posts"
+        >
+            پست‌های استخراجی
+        </button>
+
+        <button
+            class="nav-item"
+            data-panel="accounts"
+        >
+            اکانت‌های تلگرام
+        </button>
+
+        <button
+            class="nav-item"
+            data-panel="channels"
+        >
+            کانال‌ها
+        </button>
+
+        <button
+            class="nav-item"
+            data-panel="logs"
+        >
+            لاگ‌ها
+        </button>
+
+        <button
+            class="nav-item"
+            data-panel="settings"
+        >
+            تنظیمات
+        </button>
+
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="user-chip">
-        <span class="status-dot"></span>
-        <span>{{ username }}</span>
-      </div>
-      <form method="post" action="{{ url_for('logout') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn ghost full">خروج</button>
-      </form>
-    </div>
-  </aside>
 
-  <main class="content">
+    <div class="sidebar-footer">
+
+        <div class="user-chip">
+
+            <span class="status-dot"></span>
+
+            <span>
+                {{ username }}
+            </span>
+
+        </div>
+
+
+        <form
+            method="post"
+            action="{{ url_for('logout') }}"
+        >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
+
+            <button
+                type="submit"
+                class="btn ghost full"
+            >
+                خروج
+            </button>
+
+        </form>
+
+    </div>
+
+</aside>
+
+
+<main class="content">
+
     <header class="topbar">
-      <button class="menu-button" id="menuButton" aria-label="منو">☰</button>
-      <div>
-        <h1 id="pageTitle">داشبورد</h1>
-        <p>نسخه {{ version }} · Stage 01</p>
-      </div>
-      <div class="health-pill"><span class="status-dot"></span> سیستم آماده</div>
+
+        <button
+            class="menu-button"
+            id="menuButton"
+            aria-label="منو"
+        >
+            ☰
+        </button>
+
+        <div>
+
+            <h1 id="pageTitle">
+                داشبورد
+            </h1>
+
+            <p>
+                نسخه {{ version }} · Stage 02
+            </p>
+
+        </div>
+
+        <div
+            class="health-pill"
+            id="healthPill"
+        >
+
+            <span class="status-dot"></span>
+
+            سیستم آماده
+
+        </div>
+
     </header>
 
-    <section class="panel active" data-panel-content="dashboard">
-      <div class="cards-grid">
-        <article class="stat-card"><span>اکانت‌های متصل</span><strong>{{ stats.accounts }}</strong><small>Stage 02</small></article>
-        <article class="stat-card"><span>کانال‌ها</span><strong>{{ stats.channels }}</strong><small>Stage 02</small></article>
-        <article class="stat-card"><span>جاب‌ها</span><strong>{{ stats.jobs }}</strong><small>Stage 03</small></article>
-        <article class="stat-card"><span>پست‌ها</span><strong>{{ stats.posts }}</strong><small>Stage 03</small></article>
-        <article class="stat-card"><span>ارسال موفق</span><strong>{{ stats.forwarded }}</strong><small>Stage 04</small></article>
-        <article class="stat-card"><span>خطا</span><strong>{{ stats.failed }}</strong><small>Stage 04</small></article>
-      </div>
 
-      <div class="content-grid">
-        <article class="surface">
-          <div class="surface-head">
-            <div>
-              <h2>وضعیت پروژه</h2>
-              <p>Stage 01 از 05</p>
+    <div
+        id="toastContainer"
+        class="toast-container"
+    ></div>
+
+
+    <!-- ================================================== -->
+    <!-- DASHBOARD -->
+    <!-- ================================================== -->
+
+    <section
+        class="panel active"
+        data-panel-content="dashboard"
+    >
+
+        <div class="cards-grid">
+
+            <article class="stat-card">
+
+                <span>
+                    اکانت‌ها
+                </span>
+
+                <strong
+                    id="statAccounts"
+                >
+                    0
+                </strong>
+
+                <small>
+                    ثبت‌شده
+                </small>
+
+            </article>
+
+            <article class="stat-card">
+
+                <span>
+                    متصل
+                </span>
+
+                <strong
+                    id="statConnected"
+                >
+                    0
+                </strong>
+
+                <small>
+                    Session فعال
+                </small>
+
+            </article>
+
+            <article class="stat-card">
+
+                <span>
+                    کانال / گروه
+                </span>
+
+                <strong
+                    id="statChannels"
+                >
+                    0
+                </strong>
+
+                <small>
+                    قابل استفاده
+                </small>
+
+            </article>
+
+            <article class="stat-card">
+
+                <span>
+                    جاب‌ها
+                </span>
+
+                <strong>
+                    0
+                </strong>
+
+                <small>
+                    Stage 03
+                </small>
+
+            </article>
+
+            <article class="stat-card">
+
+                <span>
+                    ارسال موفق
+                </span>
+
+                <strong>
+                    0
+                </strong>
+
+                <small>
+                    Stage 04
+                </small>
+
+            </article>
+
+            <article class="stat-card">
+
+                <span>
+                    خطا
+                </span>
+
+                <strong>
+                    0
+                </strong>
+
+                <small>
+                    Transfer
+                </small>
+
+            </article>
+
+        </div>
+
+
+        <div class="content-grid">
+
+            <article class="surface">
+
+                <div class="surface-head">
+
+                    <div>
+
+                        <h2>
+                            وضعیت پروژه
+                        </h2>
+
+                        <p>
+                            Stage 02 از 05
+                        </p>
+
+                    </div>
+
+                    <span class="badge success">
+                        فعال
+                    </span>
+
+                </div>
+
+                <div class="progress">
+
+                    <span
+                        style="width:40%"
+                    ></span>
+
+                </div>
+
+                <ul class="check-list">
+
+                    <li class="done">
+                        Flask / Login / SPA
+                    </li>
+
+                    <li class="done">
+                        Nginx /teltest
+                    </li>
+
+                    <li class="done">
+                        Telegram API Settings
+                    </li>
+
+                    <li class="done">
+                        Phone Verification
+                    </li>
+
+                    <li class="done">
+                        2FA / Session
+                    </li>
+
+                    <li class="done">
+                        Channel Discovery
+                    </li>
+
+                    <li>
+                        Job Engine
+                    </li>
+
+                    <li>
+                        Forward Benchmark
+                    </li>
+
+                </ul>
+
+            </article>
+
+
+            <article class="surface">
+
+                <div class="surface-head">
+
+                    <div>
+
+                        <h2>
+                            اتصال سریع
+                        </h2>
+
+                        <p>
+                            Telegram Account
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <p class="muted">
+
+                    ابتدا API ID و API Hash را
+                    در تنظیمات ذخیره کن، سپس شماره
+                    تلگرام را اضافه کن.
+
+                </p>
+
+                <div class="action-row">
+
+                    <button
+                        class="btn primary"
+                        data-open-panel="settings"
+                    >
+                        تنظیم API
+                    </button>
+
+                    <button
+                        class="btn secondary"
+                        data-open-panel="accounts"
+                    >
+                        افزودن اکانت
+                    </button>
+
+                </div>
+
+            </article>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- JOBS -->
+    <!-- ================================================== -->
+
+    <section
+        class="panel"
+        data-panel-content="jobs"
+    >
+
+        <div class="empty-state">
+
+            <h2>
+                جاب‌ها
+            </h2>
+
+            <p>
+                در Stage 03 انتخاب Source،
+                Destination، Join و Extract فعال می‌شود.
+            </p>
+
+            <span class="badge">
+                Stage 03
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- POSTS -->
+    <!-- ================================================== -->
+
+    <section
+        class="panel"
+        data-panel-content="posts"
+    >
+
+        <div class="empty-state">
+
+            <h2>
+                پست‌های استخراجی
+            </h2>
+
+            <p>
+                ذخیره اختیاری محتوای استخراجی
+                در Stage 03 فعال خواهد شد.
+            </p>
+
+            <span class="badge">
+                Stage 03
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- ACCOUNTS -->
+    <!-- ================================================== -->
+
+    <section
+        class="panel"
+        data-panel-content="accounts"
+    >
+
+        <div class="stage-grid">
+
+            <article class="surface">
+
+                <div class="surface-head">
+
+                    <div>
+
+                        <h2>
+                            افزودن اکانت Telegram
+                        </h2>
+
+                        <p>
+                            Telethon User Session
+                        </p>
+
+                    </div>
+
+                    <span class="badge success">
+                        فعال
+                    </span>
+
+                </div>
+
+
+                <form
+                    id="phoneForm"
+                    class="stack-form"
+                >
+
+                    <label>
+                        شماره تلفن
+                    </label>
+
+                    <div class="input-action">
+
+                        <input
+                            id="phoneInput"
+                            class="text-input ltr"
+                            type="tel"
+                            placeholder="+989121234567"
+                            required
+                        >
+
+                        <button
+                            id="sendCodeButton"
+                            type="submit"
+                            class="btn primary"
+                        >
+                            ارسال کد
+                        </button>
+
+                    </div>
+
+                </form>
+
+
+                <p class="help-text">
+
+                    شماره باید همراه کد کشور باشد.
+                    Session هر شماره به‌صورت مستقل
+                    روی سرور ذخیره می‌شود.
+
+                </p>
+
+            </article>
+
+
+            <article class="surface">
+
+                <div class="surface-head">
+
+                    <div>
+
+                        <h2>
+                            خلاصه
+                        </h2>
+
+                        <p>
+                            Telegram Sessions
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="mini-stats">
+
+                    <div>
+
+                        <span>
+                            ثبت‌شده
+                        </span>
+
+                        <strong
+                            id="accountCountMini"
+                        >
+                            0
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            متصل
+                        </span>
+
+                        <strong
+                            id="connectedCountMini"
+                        >
+                            0
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+        </div>
+
+
+        <div
+            id="accountsList"
+            class="account-list"
+        >
+
+            <div class="loading-box">
+                در حال دریافت اکانت‌ها...
             </div>
-            <span class="badge success">فعال</span>
-          </div>
-          <div class="progress"><span style="width:20%"></span></div>
-          <ul class="check-list">
-            <li class="done">Flask Application</li>
-            <li class="done">Login بدون دیتابیس</li>
-            <li class="done">Single Page Dashboard</li>
-            <li class="done">Nginx /teltest</li>
-            <li>Telethon Account Manager</li>
-            <li>Job & Transfer Engine</li>
-          </ul>
-        </article>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- CHANNELS -->
+    <!-- ================================================== -->
+
+    <section
+        class="panel"
+        data-panel-content="channels"
+    >
 
         <article class="surface">
-          <div class="surface-head"><div><h2>اجرای بعدی</h2><p>Stage 02</p></div></div>
-          <h3>اتصال حساب‌های تلگرام</h3>
-          <p class="muted">افزودن API ID/API Hash، شماره تلفن، دریافت کد وریفای، 2FA، ذخیره Session و دریافت Dialog/Channelها.</p>
-          <button class="btn primary" data-open-panel="accounts">مشاهده بخش اکانت‌ها</button>
+
+            <div class="surface-head channel-head">
+
+                <div>
+
+                    <h2>
+                        کانال‌ها و گروه‌ها
+                    </h2>
+
+                    <p>
+                        دریافت‌شده از Telegram Dialogs
+                    </p>
+
+                </div>
+
+                <div class="channel-actions">
+
+                    <select
+                        id="channelAccountFilter"
+                        class="select-input"
+                    >
+
+                        <option value="">
+                            همه اکانت‌ها
+                        </option>
+
+                    </select>
+
+                    <button
+                        id="refreshSelectedAccount"
+                        class="btn secondary"
+                        type="button"
+                    >
+                        Refresh
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-wrap">
+
+                <table class="data-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                عنوان
+                            </th>
+
+                            <th>
+                                Username
+                            </th>
+
+                            <th>
+                                نوع
+                            </th>
+
+                            <th>
+                                اکانت
+                            </th>
+
+                            <th>
+                                دسترسی
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody
+                        id="channelsTableBody"
+                    >
+
+                        <tr>
+
+                            <td
+                                colspan="5"
+                                class="table-empty"
+                            >
+                                هنوز کانالی دریافت نشده است.
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
         </article>
-      </div>
+
     </section>
 
-    <section class="panel" data-panel-content="jobs">
-      <div class="empty-state"><h2>جاب‌ها</h2><p>در Stage 03 ساخت، اجرا و تاریخچه Job فعال می‌شود.</p><span class="badge">Coming in Stage 03</span></div>
+
+    <!-- ================================================== -->
+    <!-- LOGS -->
+    <!-- ================================================== -->
+
+    <section
+        class="panel"
+        data-panel-content="logs"
+    >
+
+        <div class="empty-state">
+
+            <h2>
+                لاگ‌ها
+            </h2>
+
+            <p>
+                Live Job Log در Stage 05
+                به این صفحه اضافه می‌شود.
+            </p>
+
+            <span class="badge">
+                Stage 05
+            </span>
+
+        </div>
+
     </section>
 
-    <section class="panel" data-panel-content="posts">
-      <div class="empty-state"><h2>پست‌های استخراجی</h2><p>ذخیره اختیاری پیام‌های استخراج‌شده در Stage 03 اضافه می‌شود.</p><span class="badge">Coming in Stage 03</span></div>
+
+    <!-- ================================================== -->
+    <!-- SETTINGS -->
+    <!-- ================================================== -->
+
+    <section
+        class="panel"
+        data-panel-content="settings"
+    >
+
+        <div class="stage-grid">
+
+            <article class="surface">
+
+                <div class="surface-head">
+
+                    <div>
+
+                        <h2>
+                            Telegram API
+                        </h2>
+
+                        <p>
+                            API ID / API Hash
+                        </p>
+
+                    </div>
+
+                    <span
+                        class="badge"
+                        id="apiStatusBadge"
+                    >
+                        بررسی...
+                    </span>
+
+                </div>
+
+
+                <form
+                    id="telegramSettingsForm"
+                    class="stack-form"
+                >
+
+                    <label>
+                        API ID
+                    </label>
+
+                    <input
+                        id="telegramApiId"
+                        class="text-input ltr"
+                        type="text"
+                        inputmode="numeric"
+                        placeholder="12345678"
+                        required
+                    >
+
+
+                    <label>
+                        API Hash
+                    </label>
+
+                    <input
+                        id="telegramApiHash"
+                        class="text-input ltr"
+                        type="password"
+                        placeholder="32 character API Hash"
+                    >
+
+
+                    <div
+                        id="apiHashCurrent"
+                        class="help-text ltr"
+                    ></div>
+
+
+                    <button
+                        id="saveTelegramSettings"
+                        type="submit"
+                        class="btn primary"
+                    >
+                        ذخیره تنظیمات Telegram
+                    </button>
+
+                </form>
+
+            </article>
+
+
+            <article class="surface">
+
+                <div class="surface-head">
+
+                    <div>
+
+                        <h2>
+                            Runtime
+                        </h2>
+
+                        <p>
+                            Local secure storage
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="settings-row">
+
+                    <span>
+                        Database
+                    </span>
+
+                    <code>
+                        /var/lib/teltest/data
+                    </code>
+
+                </div>
+
+
+                <div class="settings-row">
+
+                    <span>
+                        Sessions
+                    </span>
+
+                    <code>
+                        /var/lib/teltest/sessions
+                    </code>
+
+                </div>
+
+
+                <div class="settings-row">
+
+                    <span>
+                        Telethon
+                    </span>
+
+                    <code>
+                        1.45.0
+                    </code>
+
+                </div>
+
+
+                <div class="settings-row">
+
+                    <span>
+                        Stage
+                    </span>
+
+                    <code>
+                        02 / 05
+                    </code>
+
+                </div>
+
+            </article>
+
+        </div>
+
     </section>
 
-    <section class="panel" data-panel-content="accounts">
-      <div class="surface">
-        <div class="surface-head"><div><h2>اکانت‌های تلگرام</h2><p>اتصال از طریق Telethon</p></div><span class="badge">Stage 02</span></div>
-        <p class="muted">در ورک بعدی فرم شماره تلفن، Send Code، Verify، 2FA و مدیریت Session در همین صفحه فعال می‌شود.</p>
-      </div>
-    </section>
+</main>
 
-    <section class="panel" data-panel-content="channels">
-      <div class="empty-state"><h2>کانال‌ها</h2><p>کانال‌ها و گروه‌های هر اکانت در Stage 02 از Telegram دریافت می‌شوند.</p><span class="badge">Coming in Stage 02</span></div>
-    </section>
 
-    <section class="panel" data-panel-content="logs">
-      <div class="empty-state"><h2>لاگ‌ها</h2><p>Live Job Logs در Stage 05 اضافه خواهد شد.</p><span class="badge">Coming in Stage 05</span></div>
-    </section>
+<script
+    src="{{ url_for('static', filename='app.js') }}"
+></script>
 
-    <section class="panel" data-panel-content="settings">
-      <div class="surface">
-        <div class="surface-head"><div><h2>تنظیمات</h2><p>پیکربندی برنامه</p></div></div>
-        <div class="settings-row"><span>Base URL</span><code>/teltest</code></div>
-        <div class="settings-row"><span>Internal Port</span><code>18870</code></div>
-        <div class="settings-row"><span>Storage</span><code>Stage 03 / SQLite</code></div>
-        <div class="settings-row"><span>Telethon</span><code>1.45.0</code></div>
-      </div>
-    </section>
-  </main>
-
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
+
 </html>

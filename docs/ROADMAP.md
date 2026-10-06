@@ -1,31 +1,36 @@
-# TelTest Roadmap — 5 Stages / 20 Works
+# TelTest Roadmap
 
-## Stage 01 — Foundation
+## Stage 01 — COMPLETE
+
 - 01.1 Flask Application
 - 01.2 Simple Login
 - 01.3 Single Page Dashboard
 - 01.4 Nginx `/teltest`
 
-## Stage 02 — Telegram Accounts
-- 02.1 Telegram API settings
-- 02.2 Add phone / send verification code
-- 02.3 Verify / 2FA / session persistence
-- 02.4 Discover dialogs, channels and groups
+## Stage 02 — COMPLETE
 
-## Stage 03 — Jobs & Extraction
-- 03.1 Job creation
-- 03.2 Resolve and join source
-- 03.3 Extract messages
-- 03.4 Optional SQLite post storage
+- 02.1 Telegram API Settings
+- 02.2 Phone / Send Verification Code
+- 02.3 Verify / 2FA / Persistent Session
+- 02.4 Discover / Refresh Channels
 
-## Stage 04 — Transfer & Benchmark
-- 04.1 Native forward
-- 04.2 Copy/re-send without forward reference
-- 04.3 Timer and throughput benchmark
-- 04.4 FloodWait/retry/error handling
+## Stage 03 — NEXT
 
-## Stage 05 — Operations
-- 05.1 Job history
-- 05.2 Live logs
+- 03.1 Job Creation
+- 03.2 Resolve / Join Source
+- 03.3 Extract Messages
+- 03.4 Optional SQLite Post Storage
+
+## Stage 04
+
+- 04.1 Native Forward
+- 04.2 Copy Without Forward Reference
+- 04.3 Benchmark Timer
+- 04.4 FloodWait / Retry
+
+## Stage 05
+
+- 05.1 Job History
+- 05.2 Live Logs
 - 05.3 Settings
-- 05.4 Production hardening
+- 05.4 Production Hardening

@@ -1,26 +1,54 @@
 # TelTest
 
-A lightweight Flask + Telethon control panel deployed at `https://srun.ir/teltest/`.
+Single-page Flask + Telethon control panel.
 
-## Current version
+## URL
 
-`v0.1.0` — Stage 01 complete.
+`https://srun.ir/teltest/`
+
+## Current Version
+
+`v0.2.0`
+
+## Completed
 
 ### Stage 01
 
-- Flask application foundation
-- Simple session login without a user database
-- Single-page RTL dashboard with sidebar
-- Nginx reverse proxy under `/teltest`
-- systemd + Gunicorn deployment
-- Health endpoint at `/teltest/health`
+- Flask application
+- Login without user database
+- RTL single-page dashboard
+- Nginx `/teltest`
+- Gunicorn + systemd
 
-## Roadmap
+### Stage 02
 
-1. Stage 01 — Flask/UI/Auth
-2. Stage 02 — Telethon accounts, phone verification, sessions, channel discovery
-3. Stage 03 — Jobs, source/destination, join, extraction, optional SQLite storage
-4. Stage 04 — Forward/copy engine, benchmark timer, FloodWait/retry
-5. Stage 05 — History, live logs, settings, production hardening
+- Telegram API ID / API Hash settings
+- Add Telegram account by phone
+- Send verification code
+- Verify login code
+- Telegram 2FA support
+- Persistent Telethon session per account
+- Discover channels and groups
+- Refresh dialogs
+- Multiple Telegram accounts
 
-Secrets and Telegram session files are intentionally excluded from Git.
+## Runtime storage
+
+Sensitive runtime data is outside Git:
+
+- Database: `/var/lib/teltest/data/`
+- Telethon sessions: `/var/lib/teltest/sessions/`
+- Environment: `/etc/teltest/teltest.env`
+
+Telegram API Hash and session files must not be committed.
+
+## Next
+
+Stage 03:
+
+- Jobs
+- Source channel
+- Join source
+- Destination channel
+- Message extraction
+- Optional post persistence
