@@ -360,6 +360,7 @@
         if (name === "settings") {
             loadTelegramSettings();
             loadBaleSettings();
+            loadExternalMirrorSettings();
         }
 
     }
@@ -883,6 +884,329 @@
                     );
 
                 }
+
+            }
+        );
+
+
+
+    // ========================================================
+    // EITAA / RUBIKA SETTINGS
+    // ========================================================
+
+    async function loadProviderSettings(
+        provider
+    ) {
+
+        const data =
+            await api(
+                `/api/settings/${provider}`
+            );
+
+
+        const prefix =
+            provider === "eitaa"
+            ? "eitaa"
+            : "rubika";
+
+
+        const chat =
+            document.getElementById(
+                `${prefix}ChatId`
+            );
+
+
+        const current =
+            document.getElementById(
+                `${prefix}TokenCurrent`
+            );
+
+
+        const badge =
+            document.getElementById(
+                `${prefix}StatusBadge`
+            );
+
+
+        if (chat) {
+
+            chat.value =
+                data.chat_id
+                || "";
+
+        }
+
+
+        if (current) {
+
+            current.textContent =
+                data.token_masked
+                ? `ذخیره‌شده: ${data.token_masked}`
+                : "توکن ذخیره نشده است.";
+
+        }
+
+
+        if (badge) {
+
+            badge.textContent =
+                data.configured
+                ? "آماده"
+                : "تنظیم نشده";
+
+
+            badge.className =
+                data.configured
+                ? "badge success"
+                : "badge warning";
+
+        }
+
+    }
+
+
+    async function loadExternalMirrorSettings() {
+
+        try {
+
+            await Promise.all(
+                [
+                    loadProviderSettings(
+                        "eitaa"
+                    ),
+
+                    loadProviderSettings(
+                        "rubika"
+                    ),
+                ]
+            );
+
+
+        } catch (error) {
+
+            toast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    }
+
+
+    function bindProviderForm(
+        provider
+    ) {
+
+        const prefix =
+            provider === "eitaa"
+            ? "eitaa"
+            : "rubika";
+
+
+        const form =
+            document.getElementById(
+                `${prefix}SettingsForm`
+            );
+
+
+        if (!form) {
+            return;
+        }
+
+
+        form.addEventListener(
+            "submit",
+            async (event) => {
+
+                event.preventDefault();
+
+
+                const button =
+                    document.getElementById(
+                        provider === "eitaa"
+                        ? "saveEitaaSettings"
+                        : "saveRubikaSettings"
+                    );
+
+
+                setBusy(
+                    button,
+                    true,
+                    "در حال ذخیره..."
+                );
+
+
+                try {
+
+                    const result =
+                        await api(
+                            `/api/settings/${provider}`,
+                            {
+                                method:
+                                    "POST",
+
+                                body:
+                                    JSON.stringify(
+                                        {
+                                            token:
+                                                document
+                                                    .getElementById(
+                                                        provider === "eitaa"
+                                                        ? "eitaaBotToken"
+                                                        : "rubikaBotToken"
+                                                    )
+                                                    .value
+                                                    .trim(),
+
+                                            chat_id:
+                                                document
+                                                    .getElementById(
+                                                        provider === "eitaa"
+                                                        ? "eitaaChatId"
+                                                        : "rubikaChatId"
+                                                    )
+                                                    .value
+                                                    .trim(),
+                                        }
+                                    ),
+                            }
+                        );
+
+
+                    toast(
+                        result.message
+                    );
+
+
+                    document
+                        .getElementById(
+                            provider === "eitaa"
+                            ? "eitaaBotToken"
+                            : "rubikaBotToken"
+                        )
+                        .value = "";
+
+
+                    await loadProviderSettings(
+                        provider
+                    );
+
+
+                } catch (error) {
+
+                    toast(
+                        error.message,
+                        "error"
+                    );
+
+
+                } finally {
+
+                    setBusy(
+                        button,
+                        false
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    bindProviderForm(
+        "eitaa"
+    );
+
+
+    bindProviderForm(
+        "rubika"
+    );
+
+
+    async function testProvider(
+        provider,
+        button
+    ) {
+
+        setBusy(
+            button,
+            true,
+            "در حال تست..."
+        );
+
+
+        try {
+
+            const result =
+                await api(
+                    `/api/settings/${provider}/test`,
+                    {
+                        method:
+                            "POST",
+
+                        body:
+                            "{}",
+                    }
+                );
+
+
+            toast(
+                result.message
+            );
+
+
+        } catch (error) {
+
+            toast(
+                error.message,
+                "error"
+            );
+
+
+        } finally {
+
+            setBusy(
+                button,
+                false
+            );
+
+        }
+
+    }
+
+
+    document
+        .getElementById(
+            "testEitaaSettings"
+        )
+        ?.addEventListener(
+            "click",
+            function () {
+
+                testProvider(
+                    "eitaa",
+                    this
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "testRubikaSettings"
+        )
+        ?.addEventListener(
+            "click",
+            function () {
+
+                testProvider(
+                    "rubika",
+                    this
+                );
 
             }
         );

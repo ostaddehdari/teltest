@@ -1657,3 +1657,28 @@ button, input { font: inherit; }
         8px;
 
 }
+
+
+/* ==========================================================
+   TELTEST-EXTERNAL-MIRRORS
+   ========================================================== */
+
+.stage04-eitaa-button,
+.stage04-rubika-button {
+
+    white-space:
+        nowrap;
+
+    font-weight:
+        700;
+
+}
+
+
+#eitaaSettingsForm,
+#rubikaSettingsForm {
+
+    margin-top:
+        8px;
+
+}

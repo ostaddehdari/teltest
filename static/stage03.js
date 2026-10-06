@@ -1083,6 +1083,21 @@
                                         بله
                                     </button>
 
+
+                                    <button
+                                        class="btn secondary stage04-eitaa-button"
+                                        onclick="window.stage04ExternalJob(${job.id}, 'eitaa', this)"
+                                    >
+                                        ایتا
+                                    </button>
+
+                                    <button
+                                        class="btn secondary stage04-rubika-button"
+                                        onclick="window.stage04ExternalJob(${job.id}, 'rubika', this)"
+                                    >
+                                        روبیکا
+                                    </button>
+
                                 </div>
 
                             </td>
@@ -1733,6 +1748,78 @@
                 notify(
                     (
                         `${result.sent} پیام به بله ارسال شد — `
+                        + `${Number(
+                            result.rate || 0
+                        ).toFixed(2)} msg/s`
+                    )
+                );
+
+
+                await loadJobs();
+
+
+            } catch (error) {
+
+                notify(
+                    error.message,
+                    "error"
+                );
+
+
+                await loadJobs();
+
+
+            } finally {
+
+                busy(
+                    button,
+                    false
+                );
+
+            }
+
+        };
+
+
+
+    window.stage04ExternalJob =
+        async (
+            jobId,
+            provider,
+            button
+        ) => {
+
+            const title =
+                provider === "eitaa"
+                ? "ایتا"
+                : "روبیکا";
+
+
+            busy(
+                button,
+                true,
+                `ارسال به ${title}...`
+            );
+
+
+            try {
+
+                const result =
+                    await api(
+                        `/api/jobs/${jobId}/${provider}`,
+                        {
+                            method:
+                                "POST",
+
+                            body:
+                                "{}",
+                        }
+                    );
+
+
+                notify(
+                    (
+                        `${result.sent} پیام به ${title} ارسال شد — `
                         + `${Number(
                             result.rate || 0
                         ).toFixed(2)} msg/s`

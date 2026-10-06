@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.4.1",
+    "0.4.2",
 )
 
 ADMIN_USERNAME = os.getenv(
@@ -2142,7 +2142,22 @@ init_bale(
     telegram_client=telegram_client,
     account_get=account_get,
 )
+
 # TELTEST_BALE_END
+
+
+# TELTEST_EXTERNAL_MIRROR_START
+from external_mirror import init_external_mirrors
+
+init_external_mirrors(
+    app=app,
+    login_required=login_required,
+    api_post_required=api_post_required,
+    telegram_client=telegram_client,
+    account_get=account_get,
+)
+# TELTEST_EXTERNAL_MIRROR_END
+
 
 
 # ============================================================

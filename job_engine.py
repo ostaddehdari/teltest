@@ -2099,6 +2099,18 @@ def init_jobs(
                     bale_rate,
                     bale_last_error,
 
+                    eitaa_status,
+                    eitaa_sent_count,
+                    eitaa_seconds,
+                    eitaa_rate,
+                    eitaa_last_error,
+
+                    rubika_status,
+                    rubika_sent_count,
+                    rubika_seconds,
+                    rubika_rate,
+                    rubika_last_error,
+
                     last_error,
                     created_at,
                     started_at,
