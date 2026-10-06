@@ -1634,3 +1634,26 @@ button, input { font: inherit; }
     }
 
 }
+
+
+/* ==========================================================
+   TELTEST-BALE
+   ========================================================== */
+
+.stage04-bale-button {
+
+    white-space:
+        nowrap;
+
+    font-weight:
+        700;
+
+}
+
+
+#baleSettingsForm {
+
+    margin-top:
+        8px;
+
+}

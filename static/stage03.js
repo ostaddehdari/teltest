@@ -1075,6 +1075,14 @@
                                         Copy
                                     </button>
 
+
+                                    <button
+                                        class="btn secondary stage04-bale-button"
+                                        onclick="window.stage04BaleJob(${job.id}, this)"
+                                    >
+                                        بله
+                                    </button>
+
                                 </div>
 
                             </td>
@@ -1668,6 +1676,71 @@
                 await loadJobs();
 
                 await loadPosts();
+
+
+            } catch (error) {
+
+                notify(
+                    error.message,
+                    "error"
+                );
+
+
+                await loadJobs();
+
+
+            } finally {
+
+                busy(
+                    button,
+                    false
+                );
+
+            }
+
+        };
+
+
+
+    window.stage04BaleJob =
+        async (
+            jobId,
+            button
+        ) => {
+
+            busy(
+                button,
+                true,
+                "ارسال به بله..."
+            );
+
+
+            try {
+
+                const result =
+                    await api(
+                        `/api/jobs/${jobId}/bale`,
+                        {
+                            method:
+                                "POST",
+
+                            body:
+                                "{}",
+                        }
+                    );
+
+
+                notify(
+                    (
+                        `${result.sent} پیام به بله ارسال شد — `
+                        + `${Number(
+                            result.rate || 0
+                        ).toFixed(2)} msg/s`
+                    )
+                );
+
+
+                await loadJobs();
 
 
             } catch (error) {

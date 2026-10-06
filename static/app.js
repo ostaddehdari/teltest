@@ -359,6 +359,7 @@
 
         if (name === "settings") {
             loadTelegramSettings();
+            loadBaleSettings();
         }
 
     }
@@ -651,6 +652,241 @@
         );
 
     }
+
+
+    // ========================================================
+    // BALE SETTINGS
+    // ========================================================
+
+    async function loadBaleSettings() {
+
+        try {
+
+            const data =
+                await api(
+                    "/api/settings/bale"
+                );
+
+
+            const chat =
+                document.getElementById(
+                    "baleChatId"
+                );
+
+
+            const current =
+                document.getElementById(
+                    "baleTokenCurrent"
+                );
+
+
+            const badge =
+                document.getElementById(
+                    "baleStatusBadge"
+                );
+
+
+            if (chat) {
+
+                chat.value =
+                    data.chat_id
+                    || "";
+
+            }
+
+
+            if (current) {
+
+                current.textContent =
+                    data.token_masked
+                    ? `ذخیره‌شده: ${data.token_masked}`
+                    : "توکن ربات بله ذخیره نشده است.";
+
+            }
+
+
+            if (badge) {
+
+                badge.textContent =
+                    data.configured
+                    ? "آماده"
+                    : "تنظیم نشده";
+
+
+                badge.className =
+                    data.configured
+                    ? "badge success"
+                    : "badge warning";
+
+            }
+
+
+        } catch (error) {
+
+            toast(
+                error.message,
+                "error"
+            );
+
+        }
+
+    }
+
+
+    const baleSettingsForm =
+        document.getElementById(
+            "baleSettingsForm"
+        );
+
+
+    if (baleSettingsForm) {
+
+        baleSettingsForm.addEventListener(
+            "submit",
+            async (event) => {
+
+                event.preventDefault();
+
+
+                const button =
+                    document.getElementById(
+                        "saveBaleSettings"
+                    );
+
+
+                setBusy(
+                    button,
+                    true,
+                    "در حال ذخیره..."
+                );
+
+
+                try {
+
+                    const result =
+                        await api(
+                            "/api/settings/bale",
+                            {
+                                method:
+                                    "POST",
+
+                                body:
+                                    JSON.stringify(
+                                        {
+                                            token:
+                                                document
+                                                    .getElementById(
+                                                        "baleBotToken"
+                                                    )
+                                                    .value
+                                                    .trim(),
+
+                                            chat_id:
+                                                document
+                                                    .getElementById(
+                                                        "baleChatId"
+                                                    )
+                                                    .value
+                                                    .trim(),
+                                        }
+                                    ),
+                            }
+                        );
+
+
+                    toast(
+                        result.message
+                    );
+
+
+                    document
+                        .getElementById(
+                            "baleBotToken"
+                        )
+                        .value = "";
+
+
+                    await loadBaleSettings();
+
+
+                } catch (error) {
+
+                    toast(
+                        error.message,
+                        "error"
+                    );
+
+
+                } finally {
+
+                    setBusy(
+                        button,
+                        false
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    document
+        .getElementById(
+            "testBaleSettings"
+        )
+        ?.addEventListener(
+            "click",
+            async function () {
+
+                setBusy(
+                    this,
+                    true,
+                    "در حال تست..."
+                );
+
+
+                try {
+
+                    const result =
+                        await api(
+                            "/api/settings/bale/test",
+                            {
+                                method:
+                                    "POST",
+
+                                body:
+                                    "{}",
+                            }
+                        );
+
+
+                    toast(
+                        result.message
+                    );
+
+
+                } catch (error) {
+
+                    toast(
+                        error.message,
+                        "error"
+                    );
+
+
+                } finally {
+
+                    setBusy(
+                        this,
+                        false
+                    );
+
+                }
+
+            }
+        );
+
 
 
     // ========================================================

@@ -2092,6 +2092,13 @@ def init_jobs(
                     transfer_rate,
                     transfer_last_error,
 
+                    bale_enabled,
+                    bale_status,
+                    bale_sent_count,
+                    bale_seconds,
+                    bale_rate,
+                    bale_last_error,
+
                     last_error,
                     created_at,
                     started_at,

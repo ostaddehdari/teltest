@@ -168,7 +168,7 @@
             </h1>
 
             <p>
-                نسخه {{ version }} · Stage 02
+                نسخه {{ version }} · Stage 04
             </p>
 
         </div>
@@ -867,6 +867,91 @@
                     <div>
 
                         <h2>
+                            ربات بله
+                        </h2>
+
+                        <p>
+                            Bale Bot API
+                        </p>
+
+                    </div>
+
+                    <span
+                        class="badge"
+                        id="baleStatusBadge"
+                    >
+                        بررسی...
+                    </span>
+
+                </div>
+
+
+                <form
+                    id="baleSettingsForm"
+                    class="stack-form"
+                >
+
+                    <label>
+                        Bot Token
+                    </label>
+
+                    <input
+                        id="baleBotToken"
+                        class="text-input ltr"
+                        type="password"
+                        placeholder="Bale Bot Token"
+                    >
+
+
+                    <div
+                        id="baleTokenCurrent"
+                        class="help-text ltr"
+                    ></div>
+
+
+                    <label>
+                        Chat ID / Channel Username
+                    </label>
+
+                    <input
+                        id="baleChatId"
+                        class="text-input ltr"
+                        type="text"
+                        placeholder="@channel یا Chat ID"
+                        required
+                    >
+
+
+                    <button
+                        id="saveBaleSettings"
+                        type="submit"
+                        class="btn primary"
+                    >
+                        ذخیره تنظیمات بله
+                    </button>
+
+
+                    <button
+                        id="testBaleSettings"
+                        type="button"
+                        class="btn secondary"
+                    >
+                        تست اتصال ربات و کانال
+                    </button>
+
+                </form>
+
+            </article>
+
+
+
+            <article class="surface">
+
+                <div class="surface-head">
+
+                    <div>
+
+                        <h2>
                             Runtime
                         </h2>
 
@@ -925,7 +1010,7 @@
                     </span>
 
                     <code>
-                        02 / 05
+                        04 / 05
                     </code>
 
                 </div>

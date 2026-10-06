@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.4.0",
+    "0.4.1",
 )
 
 ADMIN_USERNAME = os.getenv(
@@ -2128,7 +2128,22 @@ init_transfer(
     telegram_client=telegram_client,
     account_get=account_get,
 )
+
 # TELTEST_STAGE04_END
+
+
+# TELTEST_BALE_START
+from bale_engine import init_bale
+
+init_bale(
+    app=app,
+    login_required=login_required,
+    api_post_required=api_post_required,
+    telegram_client=telegram_client,
+    account_get=account_get,
+)
+# TELTEST_BALE_END
+
 
 # ============================================================
 # ERRORS
