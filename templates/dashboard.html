@@ -17,12 +17,35 @@
     >
 
     <title>
-        TelTest Dashboard
+        TelTest | مرکز عملیات محتوا
     </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&amp;display=swap"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        referrerpolicy="no-referrer"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css"
+    >
 
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='app.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='app-stage06.css') }}"
     >
 
 </head>
@@ -49,7 +72,7 @@
             </strong>
 
             <small>
-                Telethon Control
+                مرکز عملیات محتوا
             </small>
 
         </div>
@@ -57,55 +80,96 @@
     </div>
 
 
-    <nav class="nav-list">
+    <nav class="nav-list" aria-label="منوی اصلی">
+
+        <span class="nav-section-label">
+            نمای کلی
+        </span>
 
         <button
             class="nav-item active"
             data-panel="dashboard"
         >
-            داشبورد
+            <i class="fa-solid fa-grid-2" aria-hidden="true"></i>
+            <span>داشبورد</span>
         </button>
+
+        <span class="nav-section-label">
+            گردش محتوا
+        </span>
 
         <button
             class="nav-item"
-            data-panel="jobs"
+            data-panel="extraction"
         >
-            جاب‌ها
+            <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i>
+            <span>استخراج</span>
+            <span class="nav-badge">جدید</span>
         </button>
 
         <button
             class="nav-item"
             data-panel="posts"
         >
-            پست‌های استخراجی
+            <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+            <span>کتابخانه محتوا</span>
+        </button>
+
+        <button
+            class="nav-item"
+            data-panel="transfers"
+        >
+            <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+            <span>انتقال</span>
+            <span class="nav-badge">جدید</span>
+        </button>
+
+        <span class="nav-section-label">
+            ابزارهای فعلی
+        </span>
+
+        <button
+            class="nav-item"
+            data-panel="jobs"
+        >
+            <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+            <span>عملیات نسخه قبلی</span>
         </button>
 
         <button
             class="nav-item"
             data-panel="accounts"
         >
-            اکانت‌های تلگرام
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+            <span>اکانت‌های تلگرام</span>
         </button>
 
         <button
             class="nav-item"
             data-panel="channels"
         >
-            کانال‌ها
+            <i class="fa-solid fa-tower-broadcast" aria-hidden="true"></i>
+            <span>کانال‌ها و گروه‌ها</span>
         </button>
+
+        <span class="nav-section-label">
+            سامانه
+        </span>
 
         <button
             class="nav-item"
             data-panel="logs"
         >
-            لاگ‌ها
+            <i class="fa-solid fa-terminal" aria-hidden="true"></i>
+            <span>لاگ‌ها</span>
         </button>
 
         <button
             class="nav-item"
             data-panel="settings"
         >
-            تنظیمات
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+            <span>تنظیمات</span>
         </button>
 
     </nav>
@@ -148,6 +212,13 @@
 
 </aside>
 
+<button
+    type="button"
+    class="sidebar-backdrop"
+    id="sidebarBackdrop"
+    aria-label="بستن منو"
+></button>
+
 
 <main class="content">
 
@@ -158,7 +229,7 @@
             id="menuButton"
             aria-label="منو"
         >
-            ☰
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
         </button>
 
         <div>
@@ -168,7 +239,7 @@
             </h1>
 
             <p>
-                نسخه {{ version }} · Stage 05
+                نسخه {{ version }} · Stage 06
             </p>
 
         </div>
@@ -180,7 +251,7 @@
 
             <span class="status-dot"></span>
 
-            سیستم آماده
+            <span>سیستم آماده</span>
 
         </div>
 
@@ -202,12 +273,42 @@
         data-panel-content="dashboard"
     >
 
+        <article class="welcome-banner">
+
+            <div>
+                <span class="eyebrow">
+                    TELTEST CONTROL CENTER
+                </span>
+
+                <h2>
+                    مدیریت جریان محتوا، از منبع تا مقصد
+                </h2>
+
+                <p>
+                    استخراج، نگهداری و انتقال اکنون به‌صورت مستقل قابل مشاهده و مدیریت هستند.
+                </p>
+            </div>
+
+            <div class="welcome-actions">
+                <button class="btn primary" data-open-panel="extraction">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    مشاهده استخراج‌ها
+                </button>
+
+                <button class="btn soft" data-open-panel="transfers">
+                    <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+                    مشاهده انتقال‌ها
+                </button>
+            </div>
+
+        </article>
+
         <div class="cards-grid">
 
             <article class="stat-card">
 
                 <span>
-                    اکانت‌ها
+                    اکانت تلگرام
                 </span>
 
                 <strong
@@ -217,7 +318,7 @@
                 </strong>
 
                 <small>
-                    ثبت‌شده
+                    ثبت‌شده در سامانه
                 </small>
 
             </article>
@@ -225,7 +326,7 @@
             <article class="stat-card">
 
                 <span>
-                    متصل
+                    اتصال فعال
                 </span>
 
                 <strong
@@ -235,7 +336,7 @@
                 </strong>
 
                 <small>
-                    Session فعال
+                    Session معتبر
                 </small>
 
             </article>
@@ -243,7 +344,7 @@
             <article class="stat-card">
 
                 <span>
-                    کانال / گروه
+                    کانال و گروه
                 </span>
 
                 <strong
@@ -253,7 +354,7 @@
                 </strong>
 
                 <small>
-                    قابل استفاده
+                    منبع یا مقصد
                 </small>
 
             </article>
@@ -261,15 +362,15 @@
             <article class="stat-card">
 
                 <span>
-                    جاب‌ها
+                    جاب استخراج
                 </span>
 
-                <strong>
+                <strong id="statExtractionJobs">
                     0
                 </strong>
 
                 <small>
-                    Stage 03
+                    مستقل از انتقال
                 </small>
 
             </article>
@@ -277,15 +378,15 @@
             <article class="stat-card">
 
                 <span>
-                    ارسال موفق
+                    محتوای ذخیره‌شده
                 </span>
 
-                <strong>
+                <strong id="statContentItems">
                     0
                 </strong>
 
                 <small>
-                    Stage 04
+                    کتابخانه یکپارچه
                 </small>
 
             </article>
@@ -293,15 +394,15 @@
             <article class="stat-card">
 
                 <span>
-                    خطا
+                    جاب انتقال
                 </span>
 
-                <strong>
+                <strong id="statTransferJobs">
                     0
                 </strong>
 
                 <small>
-                    Transfer
+                    مقصدهای مستقل
                 </small>
 
             </article>
@@ -309,73 +410,65 @@
         </div>
 
 
-        <div class="content-grid">
+        <div class="dashboard-layout">
 
-            <article class="surface">
+            <article class="surface workflow-surface">
 
                 <div class="surface-head">
 
                     <div>
 
                         <h2>
-                            وضعیت پروژه
+                            مسیر استاندارد محتوا
                         </h2>
 
                         <p>
-                            Stage 02 از 05
+                            معماری Split Core V2
                         </p>
 
                     </div>
 
-                    <span class="badge success">
-                        فعال
+                    <span class="badge success" id="architectureBadge">
+                        در حال بررسی
                     </span>
 
                 </div>
 
-                <div class="progress">
+                <div class="workflow-steps">
+                    <button type="button" data-open-panel="extraction">
+                        <span>۱</span>
+                        <i class="fa-solid fa-plug" aria-hidden="true"></i>
+                        <strong>منبع</strong>
+                        <small>Source Connector</small>
+                    </button>
 
-                    <span
-                        style="width:40%"
-                    ></span>
+                    <i class="fa-solid fa-arrow-left workflow-arrow" aria-hidden="true"></i>
 
+                    <button type="button" data-open-panel="extraction">
+                        <span>۲</span>
+                        <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i>
+                        <strong>استخراج</strong>
+                        <small>Extraction Job</small>
+                    </button>
+
+                    <i class="fa-solid fa-arrow-left workflow-arrow" aria-hidden="true"></i>
+
+                    <button type="button" data-open-panel="posts">
+                        <span>۳</span>
+                        <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+                        <strong>کتابخانه</strong>
+                        <small>Content Item</small>
+                    </button>
+
+                    <i class="fa-solid fa-arrow-left workflow-arrow" aria-hidden="true"></i>
+
+                    <button type="button" data-open-panel="transfers">
+                        <span>۴</span>
+                        <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+                        <strong>انتقال</strong>
+                        <small>Transfer Job</small>
+                    </button>
                 </div>
-
-                <ul class="check-list">
-
-                    <li class="done">
-                        Flask / Login / SPA
-                    </li>
-
-                    <li class="done">
-                        Nginx /teltest
-                    </li>
-
-                    <li class="done">
-                        Telegram API Settings
-                    </li>
-
-                    <li class="done">
-                        Phone Verification
-                    </li>
-
-                    <li class="done">
-                        2FA / Session
-                    </li>
-
-                    <li class="done">
-                        Channel Discovery
-                    </li>
-
-                    <li>
-                        Job Engine
-                    </li>
-
-                    <li>
-                        Forward Benchmark
-                    </li>
-
-                </ul>
 
             </article>
 
@@ -387,46 +480,117 @@
                     <div>
 
                         <h2>
-                            اتصال سریع
+                            منابع استخراج
                         </h2>
 
                         <p>
-                            Telegram Account
+                            اکنون و آینده
                         </p>
 
                     </div>
 
                 </div>
 
-                <p class="muted">
-
-                    ابتدا API ID و API Hash را
-                    در تنظیمات ذخیره کن، سپس شماره
-                    تلگرام را اضافه کن.
-
-                </p>
-
-                <div class="action-row">
-
-                    <button
-                        class="btn primary"
-                        data-open-panel="settings"
-                    >
-                        تنظیم API
-                    </button>
-
-                    <button
-                        class="btn secondary"
-                        data-open-panel="accounts"
-                    >
-                        افزودن اکانت
-                    </button>
-
+                <div class="connector-mini-grid" id="dashboardConnectorGrid">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
                 </div>
 
             </article>
 
         </div>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- EXTRACTION V2 -->
+    <!-- ================================================== -->
+
+    <section class="panel" data-panel-content="extraction">
+
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">EXTRACTION CENTER</span>
+                <h2>مرکز استخراج محتوا</h2>
+                <p>استخراج از منبع، مستقل از مقصد و روش انتقال انجام می‌شود.</p>
+            </div>
+
+            <span class="badge success">
+                هسته V2 فعال
+            </span>
+        </div>
+
+        <article class="surface">
+            <div class="surface-head">
+                <div>
+                    <h2>منابع قابل استفاده</h2>
+                    <p>تلگرام فعال است؛ بقیه منابع برای مراحل آینده ثبت شده‌اند.</p>
+                </div>
+            </div>
+
+            <div class="connector-grid" id="sourceConnectorGrid">
+                <div class="loading-box">در حال دریافت منابع...</div>
+            </div>
+        </article>
+
+        <article class="surface section-gap">
+            <div class="surface-head">
+                <div>
+                    <h2>جاب‌های استخراج</h2>
+                    <p>جاب‌های قدیمی بدون حذف داده به ساختار جدید نگاشت شده‌اند.</p>
+                </div>
+
+                <button type="button" class="btn secondary" id="reloadExtractionJobs">
+                    <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                    بروزرسانی
+                </button>
+            </div>
+
+            <div id="extractionJobsList" class="v2-job-list">
+                <div class="loading-box">در حال دریافت جاب‌های استخراج...</div>
+            </div>
+        </article>
+
+    </section>
+
+
+    <!-- ================================================== -->
+    <!-- TRANSFER V2 -->
+    <!-- ================================================== -->
+
+    <section class="panel" data-panel-content="transfers">
+
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">TRANSFER CENTER</span>
+                <h2>مرکز انتقال محتوا</h2>
+                <p>انتخاب محتوا و مقصدها از عملیات استخراج جدا نگهداری می‌شوند.</p>
+            </div>
+
+            <span class="badge warning">
+                سازگاری کامل با جاب‌های قبلی
+            </span>
+        </div>
+
+        <article class="surface">
+            <div class="surface-head">
+                <div>
+                    <h2>جاب‌های انتقال</h2>
+                    <p>هر جاب می‌تواند در مراحل بعد چند مقصد مستقل داشته باشد.</p>
+                </div>
+
+                <button type="button" class="btn secondary" id="reloadTransferJobs">
+                    <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                    بروزرسانی
+                </button>
+            </div>
+
+            <div id="transferJobsList" class="v2-job-list">
+                <div class="loading-box">در حال دریافت جاب‌های انتقال...</div>
+            </div>
+        </article>
 
     </section>
 
@@ -760,12 +924,12 @@
             </h2>
 
             <p>
-                Live Job Log در Stage 05
-                به این صفحه اضافه می‌شود.
+                لاگ زنده هر عملیات از بخش «عملیات نسخه قبلی»
+                و جزئیات همان جاب در دسترس است.
             </p>
 
             <span class="badge">
-                Stage 05
+                Stage 06
             </span>
 
         </div>
@@ -1179,7 +1343,7 @@
                     </span>
 
                     <code>
-                        04 / 05
+                        06 / 16
                     </code>
 
                 </div>
@@ -1200,6 +1364,10 @@
 
 <script
     src="{{ url_for('static', filename='stage03.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='stage06.js') }}"
 ></script>
 
 </body>

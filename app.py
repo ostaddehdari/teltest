@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.5.0",
+    "0.6.0",
 )
 
 ADMIN_USERNAME = os.getenv(
@@ -1057,7 +1057,7 @@ def health():
         ok=True,
         app="teltest",
         version=VERSION,
-        stage="05",
+        stage="06",
         status="ready",
         telegram_configured=bool(
             config

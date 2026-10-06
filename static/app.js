@@ -37,11 +37,17 @@
         dashboard:
             "داشبورد",
 
+        extraction:
+            "مرکز استخراج",
+
+        transfers:
+            "مرکز انتقال",
+
         jobs:
-            "جاب‌ها",
+            "عملیات نسخه قبلی",
 
         posts:
-            "پست‌های استخراجی",
+            "کتابخانه محتوا",
 
         accounts:
             "اکانت‌های تلگرام",
@@ -73,6 +79,12 @@
     const menuButton =
         document.getElementById(
             "menuButton"
+        );
+
+
+    const sidebarBackdrop =
+        document.getElementById(
+            "sidebarBackdrop"
         );
 
 
@@ -337,6 +349,10 @@
                 "open"
             );
 
+            document.body.classList.remove(
+                "sidebar-open"
+            );
+
         }
 
 
@@ -411,10 +427,44 @@
                     "open"
                 );
 
+                document.body.classList.toggle(
+                    "sidebar-open",
+                    sidebar.classList.contains(
+                        "open"
+                    )
+                );
+
             }
         );
 
     }
+
+
+    if (
+        sidebarBackdrop
+        && sidebar
+    ) {
+
+        sidebarBackdrop.addEventListener(
+            "click",
+            () => {
+                sidebar.classList.remove("open");
+                document.body.classList.remove("sidebar-open");
+            }
+        );
+
+    }
+
+
+    document.addEventListener(
+        "keydown",
+        (event) => {
+            if (event.key === "Escape" && sidebar) {
+                sidebar.classList.remove("open");
+                document.body.classList.remove("sidebar-open");
+            }
+        }
+    );
 
 
     // ========================================================
