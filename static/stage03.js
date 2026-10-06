@@ -242,13 +242,13 @@
                             </h2>
 
                             <p>
-                                Source → Extract → Destination
+                                Source → Extract → Transfer → Destination
                             </p>
 
                         </div>
 
                         <span class="badge success">
-                            Stage 03
+                            Stage 04
                         </span>
 
                     </div>
@@ -332,6 +332,54 @@
 
 
                         <label>
+                            نوع انتقال به Destination
+                        </label>
+
+                        <div class="stage03-radio-row stage04-transfer-mode">
+
+                            <label>
+
+                                <input
+                                    type="radio"
+                                    name="transferMode"
+                                    value="forward"
+                                    checked
+                                >
+
+                                Forward واقعی تلگرام
+
+                            </label>
+
+
+                            <label>
+
+                                <input
+                                    type="radio"
+                                    name="transferMode"
+                                    value="copy"
+                                >
+
+                                Copy بدون Forward Header
+
+                            </label>
+
+
+                            <label>
+
+                                <input
+                                    type="radio"
+                                    name="transferMode"
+                                    value="none"
+                                >
+
+                                فقط استخراج
+
+                            </label>
+
+                        </div>
+
+
+                        <label>
                             ذخیره پست استخراجی
                         </label>
 
@@ -391,11 +439,11 @@
                         <div>
 
                             <h2>
-                                Stage 03
+                                Stage 04
                             </h2>
 
                             <p>
-                                وضعیت موتور استخراج
+                                وضعیت موتور استخراج و انتقال
                             </p>
 
                         </div>
@@ -448,7 +496,7 @@
                             </span>
 
                             <strong>
-                                Stage 04
+                                فعال
                             </strong>
 
                         </div>
@@ -500,6 +548,7 @@
                                 <th>Destination</th>
                                 <th>Mode</th>
                                 <th>Extract</th>
+                                <th>Transfer</th>
                                 <th>زمان</th>
                                 <th>Status</th>
                                 <th>عملیات</th>
@@ -513,7 +562,7 @@
 
                             <tr>
                                 <td
-                                    colspan="9"
+                                    colspan="10"
                                     class="table-empty"
                                 >
                                     در حال دریافت...
@@ -851,7 +900,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td
-                            colspan="9"
+                            colspan="10"
                             class="table-empty"
                         >
                             هنوز Job ساخته نشده است.
@@ -913,6 +962,55 @@
                                 / ${job.limit_count}
                             </td>
 
+                            <td class="stage04-transfer-cell">
+
+                                <strong>
+                                    ${
+                                        job.transfer_mode
+                                        === "forward"
+                                        ? "Forward"
+                                        : (
+                                            job.transfer_mode
+                                            === "copy"
+                                            ? "Copy"
+                                            : "—"
+                                        )
+                                    }
+                                </strong>
+
+                                <small>
+                                    ${
+                                        job.transferred_count
+                                        ?? 0
+                                    }
+                                    /
+                                    ${job.limit_count}
+                                </small>
+
+                                <small>
+                                    ${
+                                        esc(
+                                            job.transfer_status
+                                            || "none"
+                                        )
+                                    }
+                                </small>
+
+                                ${
+                                    job.transfer_rate
+                                    ? `
+                                        <small class="ltr">
+                                            ${Number(
+                                                job.transfer_rate
+                                            ).toFixed(2)}
+                                            msg/s
+                                        </small>
+                                    `
+                                    : ""
+                                }
+
+                            </td>
+
                             <td class="ltr">
                                 ${duration(
                                     job.extraction_seconds
@@ -961,6 +1059,20 @@
                                         onclick="window.stage03ShowLogs(${job.id}, this)"
                                     >
                                         لاگ
+                                    </button>
+
+                                    <button
+                                        class="btn secondary stage04-forward-button"
+                                        onclick="window.stage04TransferJob(${job.id}, 'forward', this)"
+                                    >
+                                        Forward
+                                    </button>
+
+                                    <button
+                                        class="btn secondary stage04-copy-button"
+                                        onclick="window.stage04TransferJob(${job.id}, 'copy', this)"
+                                    >
+                                        Copy
                                     </button>
 
                                 </div>
@@ -1341,6 +1453,36 @@
                                 </strong>
                             </div>
 
+
+                            <div>
+                                <span>Transfer</span>
+                                <strong>
+                                    ${
+                                        esc(
+                                            job.transfer_mode
+                                            || "none"
+                                        )
+                                    }
+                                    —
+                                    ${
+                                        job.transferred_count
+                                        ?? 0
+                                    }
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Transfer Status</span>
+                                <strong>
+                                    ${
+                                        esc(
+                                            job.transfer_status
+                                            || "none"
+                                        )
+                                    }
+                                </strong>
+                            </div>
+
                         </div>
 
 
@@ -1424,6 +1566,134 @@
 
 
 
+    async function configureTransfer(
+        jobId,
+        mode,
+        reset = false
+    ) {
+
+        return await api(
+            `/api/jobs/${jobId}/transfer/config`,
+            {
+                method:
+                    "POST",
+
+                body:
+                    JSON.stringify(
+                        {
+                            transfer_mode:
+                                mode,
+
+                            reset:
+                                reset,
+                        }
+                    ),
+            }
+        );
+
+    }
+
+
+    async function executeTransfer(
+        jobId
+    ) {
+
+        return await api(
+            `/api/jobs/${jobId}/transfer`,
+            {
+                method:
+                    "POST",
+
+                body:
+                    "{}",
+            }
+        );
+
+    }
+
+
+    window.stage04TransferJob =
+        async (
+            jobId,
+            mode,
+            button
+        ) => {
+
+            const job =
+                jobsCache.find(
+                    (item) =>
+                        Number(item.id)
+                        === Number(jobId)
+                );
+
+
+            const shouldReset =
+                !job
+                || job.transfer_mode !== mode
+                || job.transfer_status === "completed"
+                || job.transfer_status === "none"
+                || job.transfer_status === "disabled";
+
+
+            busy(
+                button,
+                true,
+                "انتقال..."
+            );
+
+
+            try {
+
+                await configureTransfer(
+                    jobId,
+                    mode,
+                    shouldReset
+                );
+
+
+                const result =
+                    await executeTransfer(
+                        jobId
+                    );
+
+
+                notify(
+                    (
+                        `${result.transferred} پیام منتقل شد — `
+                        + `${Number(result.rate || 0).toFixed(2)} msg/s`
+                    )
+                );
+
+
+                await loadJobs();
+
+                await loadPosts();
+
+
+            } catch (error) {
+
+                notify(
+                    error.message,
+                    "error"
+                );
+
+
+                await loadJobs();
+
+
+            } finally {
+
+                busy(
+                    button,
+                    false
+                );
+
+            }
+
+        };
+
+
+
     window.stage03RunJob =
         async (
             jobId,
@@ -1455,6 +1725,56 @@
                 notify(
                     result.message
                 );
+
+
+                const job =
+                    jobsCache.find(
+                        (item) =>
+                            Number(item.id)
+                            === Number(jobId)
+                    );
+
+
+                const transferMode =
+                    job?.transfer_mode
+                    || "none";
+
+
+                if (
+                    transferMode
+                    !== "none"
+                ) {
+
+                    await configureTransfer(
+                        jobId,
+                        transferMode,
+                        true
+                    );
+
+
+                    busy(
+                        button,
+                        true,
+                        "در حال انتقال..."
+                    );
+
+
+                    const transferResult =
+                        await executeTransfer(
+                            jobId
+                        );
+
+
+                    notify(
+                        (
+                            `${transferResult.transferred} پیام منتقل شد — `
+                            + `${Number(
+                                transferResult.rate || 0
+                            ).toFixed(2)} msg/s`
+                        )
+                    );
+
+                }
 
 
                 if (
@@ -1612,6 +1932,13 @@
             );
 
 
+            await configureTransfer(
+                created.job_id,
+                transferMode,
+                true
+            );
+
+
             busy(
                 button,
                 true,
@@ -1635,6 +1962,36 @@
             notify(
                 result.message
             );
+
+
+            if (
+                transferMode
+                !== "none"
+            ) {
+
+                busy(
+                    button,
+                    true,
+                    "در حال انتقال..."
+                );
+
+
+                const transferResult =
+                    await executeTransfer(
+                        created.job_id
+                    );
+
+
+                notify(
+                    (
+                        `${transferResult.transferred} پیام منتقل شد — `
+                        + `${Number(
+                            transferResult.rate || 0
+                        ).toFixed(2)} msg/s`
+                    )
+                );
+
+            }
 
 
             await loadMeta();

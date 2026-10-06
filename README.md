@@ -1,60 +1,46 @@
 # TelTest
 
-Flask + Telethon control panel.
+Flask + Telethon Telegram job control panel.
 
-## Current version
+Current version:
 
-`v0.3.0`
+`v0.4.0`
 
-## URL
+Public URL:
 
 `https://srun.ir/teltest/`
 
 ## Stage 01
 
-- Flask
-- Login
-- Single Page Dashboard
-- Nginx
-- Gunicorn/systemd
+Flask, authentication, dashboard, nginx, systemd.
 
 ## Stage 02
 
-- Telegram API settings
-- Multi-account Telethon sessions
-- Phone verification
-- Telegram 2FA
-- Channel/group discovery
+Telegram API settings, Telethon accounts, verification,
+persistent sessions, channel/group discovery.
 
 ## Stage 03
 
-- Create Jobs
-- Select connected Telegram account
-- Source by username, t.me link or known Telegram ID
-- Auto-join source channel when required
-- Private invite link support
-- Destination resolution
-- Extract up to 5000 recent messages
-- Save extracted posts to SQLite
-- No-save extraction mode
-- Extraction timing
-- Job history
-- Extracted posts UI
+Job creation, source resolution, auto join, extraction,
+optional SQLite persistence, per-job logs.
 
-## Runtime data
+## Stage 04
 
-Sensitive data is outside Git:
+Real Telegram transfer:
+
+- Native Forward
+- Copy without Forward Header
+- Transfer progress
+- Transfer timer
+- Messages per second
+- Per-message transfer state
+- FloodWait handling
+- Resume from pending item
+- Job transfer logs
+
+Runtime data remains outside Git:
 
 - `/var/lib/teltest/data`
 - `/var/lib/teltest/sessions`
 - `/var/lib/teltest/locks`
 - `/etc/teltest/teltest.env`
-
-## Next
-
-Stage 04 adds:
-
-- Native Forward
-- Copy without forward attribution
-- Transfer timer
-- FloodWait retry/resume

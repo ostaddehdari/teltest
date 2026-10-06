@@ -1702,6 +1702,8 @@ def init_jobs(
                             ]
                             == "save"
                         ),
+
+                        job_id=job_id,
                     )
                 )
 
@@ -1888,13 +1890,11 @@ def init_jobs(
 
             log_job(
                 job_id,
-                "TRANSFER_SKIPPED_STAGE03",
+                "EXTRACTION_PHASE_COMPLETED",
                 (
-                    "هیچ پیامی به Destination ارسال نشد. "
-                    "Stage 03 فقط Resolve و Extract می‌کند؛ "
-                    "ارسال واقعی در Stage 04 فعال می‌شود."
+                    "مرحله Extract کامل شد. "
+                    "Stage 04 می‌تواند انتقال واقعی را اجرا کند."
                 ),
-                level="warning",
             )
 
 
@@ -1968,7 +1968,8 @@ def init_jobs(
 
                 message=(
                     f"{result['extracted']} پیام "
-                    f"در {elapsed:.2f} ثانیه استخراج شد."
+                    f"در {elapsed:.2f} ثانیه استخراج شد؛ "
+                    f"آماده انتقال است."
                 ),
             )
 
@@ -2083,6 +2084,14 @@ def init_jobs(
                     storage_mode,
                     extracted_count,
                     extraction_seconds,
+
+                    transfer_mode,
+                    transfer_status,
+                    transferred_count,
+                    transfer_seconds,
+                    transfer_rate,
+                    transfer_last_error,
+
                     last_error,
                     created_at,
                     started_at,

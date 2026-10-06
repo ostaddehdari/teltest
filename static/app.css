@@ -1555,3 +1555,82 @@ button, input { font: inherit; }
     }
 
 }
+
+
+/* ==========================================================
+   TELTEST-STAGE04
+   ========================================================== */
+
+.stage04-transfer-mode {
+
+    margin-bottom:
+        4px;
+
+}
+
+
+.stage04-transfer-cell {
+
+    min-width:
+        105px;
+
+}
+
+
+.stage04-transfer-cell strong,
+.stage04-transfer-cell small {
+
+    display:
+        block;
+
+}
+
+
+.stage04-transfer-cell small {
+
+    margin-top:
+        4px;
+
+    color:
+        var(--muted);
+
+    font-size:
+        10px;
+
+}
+
+
+.stage04-forward-button {
+
+    white-space:
+        nowrap;
+
+}
+
+
+.stage04-copy-button {
+
+    white-space:
+        nowrap;
+
+}
+
+
+.stage03-actions {
+
+    min-width:
+        250px;
+
+}
+
+
+@media (max-width:760px) {
+
+    .stage03-actions {
+
+        min-width:
+            0;
+
+    }
+
+}
