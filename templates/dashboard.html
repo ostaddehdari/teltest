@@ -48,6 +48,11 @@
         href="{{ url_for('static', filename='app-stage06.css') }}"
     >
 
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='app-stage07.css') }}"
+    >
+
 </head>
 
 
@@ -239,7 +244,7 @@
             </h1>
 
             <p>
-                نسخه {{ version }} · Stage 06
+                نسخه {{ version }} · Stage 07
             </p>
 
         </div>
@@ -518,8 +523,27 @@
             </div>
 
             <span class="badge success">
-                هسته V2 فعال
+                Connector Framework v1
             </span>
+        </div>
+
+        <div class="connector-health-summary" id="connectorHealthSummary">
+            <div>
+                <span>Connector فعال</span>
+                <strong id="connectorEnabledCount">۰</strong>
+            </div>
+            <div>
+                <span>وضعیت سالم</span>
+                <strong id="connectorHealthyCount">۰</strong>
+            </div>
+            <div>
+                <span>برنامه‌ریزی‌شده</span>
+                <strong id="connectorPlannedCount">۰</strong>
+            </div>
+            <button type="button" class="btn secondary" id="refreshConnectorHealth">
+                <i class="fa-solid fa-heart-pulse" aria-hidden="true"></i>
+                بررسی سلامت منابع
+            </button>
         </div>
 
         <article class="surface">
@@ -929,7 +953,7 @@
             </p>
 
             <span class="badge">
-                Stage 06
+                Stage 07
             </span>
 
         </div>
@@ -1343,7 +1367,7 @@
                     </span>
 
                     <code>
-                        06 / 16
+                        07 / 16
                     </code>
 
                 </div>
@@ -1368,6 +1392,10 @@
 
 <script
     src="{{ url_for('static', filename='stage06.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='stage07.js') }}"
 ></script>
 
 </body>

@@ -1,0 +1,226 @@
+/* ==========================================================
+   TELTEST STAGE 07 — CONNECTOR FRAMEWORK
+   ========================================================== */
+
+.connector-health-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr)) auto;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.connector-health-summary > div {
+    padding: 15px 17px;
+    background: rgba(255, 255, 255, .88);
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+}
+
+.connector-health-summary span {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.connector-health-summary strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.connector-health-summary > button {
+    align-self: stretch;
+    min-width: 190px;
+}
+
+.connector-grid.framework-grid {
+    grid-template-columns: repeat(2, minmax(250px, 1fr));
+}
+
+.connector-card.framework-card {
+    min-height: 245px;
+    padding: 18px;
+    overflow: hidden;
+}
+
+.framework-card .connector-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-left: 92px;
+}
+
+.framework-card .connector-icon {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.framework-card .connector-card-title {
+    min-width: 0;
+}
+
+.framework-card .connector-card-title strong {
+    font-size: 14px;
+}
+
+.framework-card .connector-card-title small {
+    line-height: 1.7;
+}
+
+.connector-health-state {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: #475569;
+    background: #edf1f6;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.connector-health-state::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.connector-health-state.healthy {
+    color: #047857;
+    background: #e2f8ed;
+}
+
+.connector-health-state.degraded,
+.connector-health-state.not_configured {
+    color: #b45309;
+    background: #fff4df;
+}
+
+.connector-health-state.failed,
+.connector-health-state.unavailable {
+    color: #b91c1c;
+    background: #feeceb;
+}
+
+.connector-health-state.planned {
+    color: #64748b;
+    background: #edf1f6;
+}
+
+.connector-capabilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 15px;
+}
+
+.capability-chip {
+    padding: 4px 7px;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e7edf4;
+    border-radius: 7px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.connector-health-message {
+    min-height: 43px;
+    margin: 14px 0 0;
+    padding-top: 12px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    font-size: 10px;
+    line-height: 1.8;
+}
+
+.connector-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.connector-adapter {
+    color: #8b96a8;
+    font-size: 9px;
+    direction: ltr;
+}
+
+.connector-refresh {
+    padding: 6px 9px;
+    color: #1d4ed8;
+    background: #edf4ff;
+    border: 1px solid #d9e7ff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.connector-refresh:disabled {
+    cursor: wait;
+    opacity: .6;
+}
+
+.connector-mini .mini-health-dot {
+    width: 7px;
+    height: 7px;
+    margin-right: auto;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.connector-mini .mini-health-dot.healthy {
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, .12);
+}
+
+.connector-mini .mini-health-dot.degraded,
+.connector-mini .mini-health-dot.not_configured {
+    background: #f59e0b;
+}
+
+@media (max-width: 1050px) {
+    .connector-health-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .connector-health-summary > button {
+        grid-column: 1 / -1;
+        min-height: 46px;
+    }
+}
+
+@media (max-width: 720px) {
+    .connector-grid.framework-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .connector-health-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .connector-health-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .connector-health-summary > button {
+        grid-column: auto;
+    }
+
+    .framework-card .connector-card-head {
+        padding-left: 0;
+        padding-top: 30px;
+    }
+}

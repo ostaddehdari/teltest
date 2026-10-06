@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.6.0",
+    "0.7.0",
 )
 
 ADMIN_USERNAME = os.getenv(
@@ -1057,7 +1057,7 @@ def health():
         ok=True,
         app="teltest",
         version=VERSION,
-        stage="06",
+        stage="07",
         status="ready",
         telegram_configured=bool(
             config
@@ -2168,6 +2168,17 @@ init_core_v2(
     login_required=login_required,
 )
 # TELTEST_CORE_V2_END
+
+
+# TELTEST_CONNECTOR_FRAMEWORK_START
+from connector_framework import init_connector_framework
+
+init_connector_framework(
+    app=app,
+    login_required=login_required,
+    api_post_required=api_post_required,
+)
+# TELTEST_CONNECTOR_FRAMEWORK_END
 
 
 
