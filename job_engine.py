@@ -190,6 +190,39 @@ def init_schema():
             );
 
 
+            CREATE TABLE IF NOT EXISTS job_logs (
+
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                job_id INTEGER NOT NULL,
+
+                event TEXT NOT NULL,
+
+                level TEXT NOT NULL
+                    DEFAULT 'info',
+
+                message TEXT,
+
+                details TEXT,
+
+                created_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY(job_id)
+                    REFERENCES jobs(id)
+                    ON DELETE CASCADE
+            );
+
+
+            CREATE INDEX IF NOT EXISTS
+                idx_job_logs_job
+                ON job_logs(
+                    job_id,
+                    id
+                );
+
+
+
             CREATE INDEX IF NOT EXISTS
                 idx_jobs_account
                 ON jobs(account_id);
@@ -211,6 +244,46 @@ def init_schema():
                     source_entity_id,
                     message_id
                 );
+            """
+        )
+
+        # STAGE03_JOB_LOG_MIGRATION
+        conn.execute(
+            """
+            INSERT INTO job_logs (
+                job_id,
+                event,
+                level,
+                message
+            )
+
+            SELECT
+                j.id,
+                'LEGACY_STATE',
+                'info',
+
+                CASE
+                    WHEN j.status = 'completed'
+                    THEN
+                        'این Job قبل از فعال شدن Job Log اجرا شده است. '
+                        || 'استخراج انجام شده ولی Stage 03 هیچ انتقالی '
+                        || 'به Destination انجام نمی‌دهد.'
+
+                    WHEN j.status = 'failed'
+                    THEN
+                        'این Job قبل از فعال شدن Job Log با خطا پایان یافته است.'
+
+                    ELSE
+                        'این Job قبل از فعال شدن Job Log ساخته شده است.'
+                END
+
+            FROM jobs j
+
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM job_logs l
+                WHERE l.job_id = j.id
+            )
             """
         )
 
@@ -789,9 +862,17 @@ async def execute_extraction(
     destination_ref,
     limit_count,
     save_posts,
+    job_id=None,
 ):
 
     await client.connect()
+
+    if job_id is not None:
+        log_job(
+            job_id,
+            "TELEGRAM_CONNECTED",
+            "اتصال Telethon برقرار شد.",
+        )
 
     try:
 
@@ -799,6 +880,14 @@ async def execute_extraction(
 
             raise RuntimeError(
                 "Session این اکانت Authorized نیست."
+            )
+
+
+        if job_id is not None:
+            log_job(
+                job_id,
+                "SESSION_AUTHORIZED",
+                "Session اکانت Authorized است.",
             )
 
 
@@ -810,6 +899,34 @@ async def execute_extraction(
         )
 
 
+        if job_id is not None:
+
+            log_job(
+                job_id,
+                "SOURCE_RESOLVED",
+                (
+                    f"Source: {entity_title(source_entity)} "
+                    f"({entity_peer_id(source_entity)})"
+                ),
+            )
+
+            if joined_source:
+
+                log_job(
+                    job_id,
+                    "SOURCE_JOINED",
+                    "اکانت با موفقیت عضو Source شد.",
+                )
+
+            else:
+
+                log_job(
+                    job_id,
+                    "SOURCE_ALREADY_MEMBER",
+                    "اکانت از قبل به Source دسترسی داشت.",
+                )
+
+
         destination_entity = (
             await resolve_destination(
                 client,
@@ -818,9 +935,33 @@ async def execute_extraction(
         )
 
 
+        if job_id is not None:
+
+            log_job(
+                job_id,
+                "DESTINATION_RESOLVED",
+                (
+                    f"Destination: {entity_title(destination_entity)} "
+                    f"({entity_peer_id(destination_entity)})"
+                ),
+            )
+
+
         rows = []
 
         extracted = 0
+
+
+        if job_id is not None:
+
+            log_job(
+                job_id,
+                "EXTRACT_STARTED",
+                (
+                    f"شروع خواندن حداکثر "
+                    f"{limit_count} پیام از Source."
+                ),
+            )
 
 
         async for message in client.iter_messages(
@@ -878,6 +1019,17 @@ async def execute_extraction(
                             or ""
                         ),
                 }
+            )
+
+
+        if job_id is not None:
+
+            log_job(
+                job_id,
+                "EXTRACT_COMPLETED",
+                (
+                    f"{extracted} پیام از Source خوانده شد."
+                ),
             )
 
 
@@ -964,6 +1116,49 @@ def job_get(
         ).fetchone()
 
 
+def log_job(
+    job_id,
+    event,
+    message="",
+    level="info",
+    details=None,
+):
+
+    with closing(
+        db_connect()
+    ) as conn:
+
+        conn.execute(
+            """
+            INSERT INTO job_logs (
+                job_id,
+                event,
+                level,
+                message,
+                details
+            )
+            VALUES (
+                ?, ?, ?, ?, ?
+            )
+            """,
+            (
+                int(job_id),
+                str(event)[:100],
+                str(level)[:20],
+                str(message or "")[:4000],
+                (
+                    str(details)[:8000]
+                    if details is not None
+                    else None
+                ),
+            ),
+        )
+
+        conn.commit()
+
+
+
+
 def mark_failed(
     job_id,
     error
@@ -989,6 +1184,13 @@ def mark_failed(
         )
 
         conn.commit()
+
+    log_job(
+        job_id=job_id,
+        event="FAILED",
+        level="error",
+        message=str(error),
+    )
 
 
 def upsert_channel(
@@ -1310,6 +1512,18 @@ def init_jobs(
             job_id = cursor.lastrowid
 
 
+        log_job(
+            job_id,
+            "CREATED",
+            (
+                f"Job ساخته شد. Source={source_ref} | "
+                f"Destination={destination_ref} | "
+                f"Limit={limit_count} | "
+                f"Storage={storage_mode}"
+            ),
+        )
+
+
         return jsonify(
             ok=True,
             job_id=job_id,
@@ -1447,6 +1661,13 @@ def init_jobs(
 
 
         started = time.perf_counter()
+
+
+        log_job(
+            job_id,
+            "RUN_STARTED",
+            "اجرای Job آغاز شد.",
+        )
 
 
         try:
@@ -1642,6 +1863,52 @@ def init_jobs(
                 conn.commit()
 
 
+            if job["storage_mode"] == "save":
+
+                log_job(
+                    job_id,
+                    "POSTS_SAVED",
+                    (
+                        f"{len(result['posts'])} پیام "
+                        f"در دیتابیس ذخیره شد."
+                    ),
+                )
+
+            else:
+
+                log_job(
+                    job_id,
+                    "POSTS_NOT_SAVED",
+                    (
+                        "Storage Mode روی No Save است؛ "
+                        "پیام‌ها در جدول Posts ذخیره نشدند."
+                    ),
+                )
+
+
+            log_job(
+                job_id,
+                "TRANSFER_SKIPPED_STAGE03",
+                (
+                    "هیچ پیامی به Destination ارسال نشد. "
+                    "Stage 03 فقط Resolve و Extract می‌کند؛ "
+                    "ارسال واقعی در Stage 04 فعال می‌شود."
+                ),
+                level="warning",
+            )
+
+
+            log_job(
+                job_id,
+                "COMPLETED",
+                (
+                    f"Job با موفقیت تمام شد: "
+                    f"{result['extracted']} پیام در "
+                    f"{elapsed:.2f} ثانیه."
+                ),
+            )
+
+
             upsert_channel(
                 job["account_id"],
                 result["source"],
@@ -1785,6 +2052,82 @@ def init_jobs(
                     f"{type(exc).__name__}: {exc}"
                 ),
             ), 500
+
+
+    # --------------------------------------------------------
+    # JOB LOGS
+    # --------------------------------------------------------
+
+    @app.get(
+        f"{BASE_PATH}/api/jobs/<int:job_id>/logs"
+    )
+    @login_required
+    def stage03_job_logs(
+        job_id
+    ):
+
+        with closing(
+            db_connect()
+        ) as conn:
+
+            job = conn.execute(
+                """
+                SELECT
+                    id,
+                    name,
+                    status,
+                    source_ref,
+                    destination_ref,
+                    source_title,
+                    destination_title,
+                    storage_mode,
+                    extracted_count,
+                    extraction_seconds,
+                    last_error,
+                    created_at,
+                    started_at,
+                    finished_at
+                FROM jobs
+                WHERE id = ?
+                """,
+                (job_id,),
+            ).fetchone()
+
+
+            if not job:
+
+                return jsonify(
+                    ok=False,
+                    error="Job پیدا نشد.",
+                ), 404
+
+
+            rows = conn.execute(
+                """
+                SELECT
+                    id,
+                    event,
+                    level,
+                    message,
+                    details,
+                    created_at
+                FROM job_logs
+                WHERE job_id = ?
+                ORDER BY id ASC
+                """,
+                (job_id,),
+            ).fetchall()
+
+
+        return jsonify(
+            ok=True,
+            job=dict(job),
+            logs=[
+                dict(row)
+                for row in rows
+            ],
+        )
+
 
 
     # --------------------------------------------------------

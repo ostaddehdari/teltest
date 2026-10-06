@@ -942,17 +942,28 @@
 
                             <td>
 
-                                <button
-                                    class="btn secondary stage03-run-button"
-                                    onclick="window.stage03RunJob(${job.id}, this)"
-                                >
-                                    ${
-                                        job.status
-                                        === "completed"
-                                        ? "اجرای مجدد"
-                                        : "اجرا"
-                                    }
-                                </button>
+                                <div class="stage03-actions">
+
+                                    <button
+                                        class="btn secondary stage03-run-button"
+                                        onclick="window.stage03RunJob(${job.id}, this)"
+                                    >
+                                        ${
+                                            job.status
+                                            === "completed"
+                                            ? "اجرای مجدد"
+                                            : "اجرا"
+                                        }
+                                    </button>
+
+                                    <button
+                                        class="btn secondary stage03-log-button"
+                                        onclick="window.stage03ShowLogs(${job.id}, this)"
+                                    >
+                                        لاگ
+                                    </button>
+
+                                </div>
 
                             </td>
 
@@ -1173,6 +1184,244 @@
             ).join("");
 
     }
+
+
+    window.stage03ShowLogs =
+        async (
+            jobId,
+            button
+        ) => {
+
+            busy(
+                button,
+                true,
+                "..."
+            );
+
+
+            try {
+
+                const data =
+                    await api(
+                        `/api/jobs/${jobId}/logs`
+                    );
+
+
+                document
+                    .getElementById(
+                        "stage03LogOverlay"
+                    )
+                    ?.remove();
+
+
+                const overlay =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                overlay.id =
+                    "stage03LogOverlay";
+
+
+                overlay.className =
+                    "stage03-log-overlay";
+
+
+                const job =
+                    data.job;
+
+
+                const logs =
+                    data.logs
+                        .map(
+                            (item) => `
+
+                                <div
+                                    class="stage03-log-row stage03-log-${esc(item.level)}"
+                                >
+
+                                    <div class="stage03-log-meta">
+
+                                        <span class="stage03-log-event">
+                                            ${esc(item.event)}
+                                        </span>
+
+                                        <span class="stage03-log-time ltr">
+                                            ${esc(item.created_at)}
+                                        </span>
+
+                                    </div>
+
+                                    <div class="stage03-log-message">
+                                        ${esc(item.message || "—")}
+                                    </div>
+
+                                    ${
+                                        item.details
+                                        ? `
+                                            <pre class="stage03-log-details">${esc(item.details)}</pre>
+                                        `
+                                        : ""
+                                    }
+
+                                </div>
+                            `
+                        )
+                        .join("");
+
+
+                overlay.innerHTML = `
+
+                    <div class="stage03-log-modal">
+
+                        <div class="stage03-log-header">
+
+                            <div>
+
+                                <h2>
+                                    لاگ Job #${job.id}
+                                </h2>
+
+                                <p>
+                                    ${esc(job.name)}
+                                </p>
+
+                            </div>
+
+                            <button
+                                class="btn secondary"
+                                id="stage03CloseLogs"
+                                type="button"
+                            >
+                                بستن
+                            </button>
+
+                        </div>
+
+
+                        <div class="stage03-log-summary">
+
+                            <div>
+                                <span>Source</span>
+                                <strong>
+                                    ${esc(
+                                        job.source_title
+                                        || job.source_ref
+                                    )}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Destination</span>
+                                <strong>
+                                    ${esc(
+                                        job.destination_title
+                                        || job.destination_ref
+                                    )}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Extract</span>
+                                <strong>
+                                    ${job.extracted_count}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Storage</span>
+                                <strong>
+                                    ${
+                                        job.storage_mode
+                                        === "save"
+                                        ? "DB"
+                                        : "No Save"
+                                    }
+                                </strong>
+                            </div>
+
+                        </div>
+
+
+                        ${
+                            job.last_error
+                            ? `
+                                <div class="stage03-log-current-error">
+                                    ${esc(job.last_error)}
+                                </div>
+                            `
+                            : ""
+                        }
+
+
+                        <div class="stage03-log-list">
+
+                            ${
+                                logs
+                                || `
+                                    <div class="table-empty">
+                                        لاگی ثبت نشده است.
+                                    </div>
+                                `
+                            }
+
+                        </div>
+
+                    </div>
+                `;
+
+
+                document.body.appendChild(
+                    overlay
+                );
+
+
+                document
+                    .getElementById(
+                        "stage03CloseLogs"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        () => overlay.remove()
+                    );
+
+
+                overlay.addEventListener(
+                    "click",
+                    (event) => {
+
+                        if (
+                            event.target
+                            === overlay
+                        ) {
+                            overlay.remove();
+                        }
+
+                    }
+                );
+
+
+            } catch (error) {
+
+                notify(
+                    error.message,
+                    "error"
+                );
+
+
+            } finally {
+
+                busy(
+                    button,
+                    false,
+                    "لاگ"
+                );
+
+            }
+
+        };
+
 
 
     window.stage03RunJob =

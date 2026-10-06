@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.3.2",
+    "0.3.3",
 )
 
 ADMIN_USERNAME = os.getenv(
