@@ -224,17 +224,9 @@
         }
     }
 
-    document.getElementById("reloadExtractionJobs")
-        ?.addEventListener("click", loadExtractionJobs);
-
-    document.getElementById("reloadTransferJobs")
-        ?.addEventListener("click", loadTransferJobs);
-
     Promise.all([
         loadSummary(),
         loadConnectors(),
-        loadExtractionJobs(),
-        loadTransferJobs(),
     ]).catch((error) => console.error("Stage06:", error));
 
 })();

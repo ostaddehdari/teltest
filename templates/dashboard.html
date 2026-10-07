@@ -53,6 +53,16 @@
         href="{{ url_for('static', filename='app-stage07.css') }}"
     >
 
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='app-stage08.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='operations-center.css') }}"
+    >
+
 </head>
 
 
@@ -244,7 +254,7 @@
             </h1>
 
             <p>
-                نسخه {{ version }} · Stage 07
+                نسخه {{ version }} · Stage 08.1
             </p>
 
         </div>
@@ -522,41 +532,85 @@
                 <p>استخراج از منبع، مستقل از مقصد و روش انتقال انجام می‌شود.</p>
             </div>
 
-            <span class="badge success">
-                Connector Framework v1
-            </span>
+            <div class="section-actions">
+                <span class="badge success">Telegram Extractor V2</span>
+                <button type="button" class="btn primary" id="openExtractorBuilder">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    استخراج جدید
+                </button>
+            </div>
         </div>
 
-        <div class="connector-health-summary" id="connectorHealthSummary">
-            <div>
-                <span>Connector فعال</span>
-                <strong id="connectorEnabledCount">۰</strong>
-            </div>
-            <div>
-                <span>وضعیت سالم</span>
-                <strong id="connectorHealthyCount">۰</strong>
-            </div>
-            <div>
-                <span>برنامه‌ریزی‌شده</span>
-                <strong id="connectorPlannedCount">۰</strong>
-            </div>
-            <button type="button" class="btn secondary" id="refreshConnectorHealth">
-                <i class="fa-solid fa-heart-pulse" aria-hidden="true"></i>
-                بررسی سلامت منابع
-            </button>
-        </div>
-
-        <article class="surface">
+        <article class="surface extractor-builder" id="extractorBuilder" hidden>
             <div class="surface-head">
                 <div>
-                    <h2>منابع قابل استفاده</h2>
-                    <p>تلگرام فعال است؛ بقیه منابع برای مراحل آینده ثبت شده‌اند.</p>
+                    <h2>ساخت جاب استخراج تلگرام</h2>
+                    <p>منبع را با Username، لینک یا Source ID انتخاب کنید.</p>
                 </div>
+                <button type="button" class="btn ghost" id="closeExtractorBuilder">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    بستن
+                </button>
             </div>
 
-            <div class="connector-grid" id="sourceConnectorGrid">
-                <div class="loading-box">در حال دریافت منابع...</div>
-            </div>
+            <form id="telegramExtractorForm" class="extractor-form" autocomplete="off">
+                <div class="form-field">
+                    <label for="extractorName">نام جاب</label>
+                    <input id="extractorName" name="name" type="text" maxlength="255" placeholder="مثلاً اخبار روزانه">
+                </div>
+
+                <div class="form-field">
+                    <label for="extractorAccount">اکانت تلگرام</label>
+                    <select id="extractorAccount" name="source_account_id" required>
+                        <option value="">در حال دریافت اکانت‌ها...</option>
+                    </select>
+                </div>
+
+                <div class="form-field source-field">
+                    <label for="extractorSource">منبع / Source ID</label>
+                    <input id="extractorSource" name="source_ref" type="text" required dir="ltr" placeholder="@channel یا -1001234567890">
+                    <small>Username، لینک t.me، لینک دعوت یا شناسه منبع پذیرفته می‌شود.</small>
+                </div>
+
+                <div class="form-field">
+                    <label for="extractorLimit">حداکثر پیام</label>
+                    <input id="extractorLimit" name="max_items" type="number" min="1" max="5000" value="250" required>
+                </div>
+
+                <fieldset class="start-mode-fieldset">
+                    <legend>نقطه شروع</legend>
+                    <label><input type="radio" name="start_mode" value="all" checked> آخرین پیام‌ها</label>
+                    <label><input type="radio" name="start_mode" value="date"> از تاریخ شمسی</label>
+                    <label><input type="radio" name="start_mode" value="message_id"> از Message ID</label>
+                    <label><input type="radio" name="start_mode" value="incremental"> افزایشی از Cursor</label>
+                </fieldset>
+
+                <div class="form-field conditional-field" id="persianDateField" hidden>
+                    <label for="extractorPersianDate">تاریخ شمسی</label>
+                    <div class="persian-date-control">
+                        <input id="extractorPersianDate" name="start_date_jalali" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۱۴" readonly>
+                        <button type="button" class="btn soft" id="openPersianDatePicker" aria-label="انتخاب تاریخ شمسی">
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="persian-calendar" id="persianCalendar" hidden></div>
+                </div>
+
+                <div class="form-field conditional-field" id="messageIdField" hidden>
+                    <label for="extractorMessageId">Message ID شروع</label>
+                    <input id="extractorMessageId" name="start_external_id" type="number" min="1" inputmode="numeric" placeholder="مثلاً 12500">
+                </div>
+
+                <div class="extractor-form-actions">
+                    <button type="submit" class="btn primary" id="createExtractorJob">
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                        ساخت جاب
+                    </button>
+                    <button type="button" class="btn secondary" id="refreshExtractorMeta">
+                        بروزرسانی منابع
+                    </button>
+                </div>
+            </form>
         </article>
 
         <article class="surface section-gap">
@@ -577,6 +631,17 @@
             </div>
         </article>
 
+        <article class="surface section-gap job-workspace" id="extractionJobWorkspace" hidden>
+            <div class="workspace-head">
+                <div>
+                    <span class="eyebrow">EXTRACTION JOB</span>
+                    <h2 id="extractionWorkspaceTitle">مشاهده جاب استخراج</h2>
+                </div>
+                <button type="button" class="btn ghost" data-close-workspace="extraction">بستن</button>
+            </div>
+            <div id="extractionWorkspaceBody" class="workspace-body"></div>
+        </article>
+
     </section>
 
 
@@ -593,10 +658,56 @@
                 <p>انتخاب محتوا و مقصدها از عملیات استخراج جدا نگهداری می‌شوند.</p>
             </div>
 
-            <span class="badge warning">
-                سازگاری کامل با جاب‌های قبلی
-            </span>
+            <div class="section-actions">
+                <span class="badge warning">سازگاری با جاب‌های قبلی</span>
+                <button type="button" class="btn primary" id="openTransferBuilder">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    انتقال جدید
+                </button>
+            </div>
         </div>
+
+        <article class="surface transfer-builder" id="transferBuilder" hidden>
+            <div class="surface-head">
+                <div>
+                    <h2>ساخت جاب انتقال</h2>
+                    <p>محتوای یک جاب استخراج را به مقصد تلگرام منتقل کنید.</p>
+                </div>
+                <button type="button" class="btn ghost" id="closeTransferBuilder">بستن</button>
+            </div>
+
+            <form id="transferBuilderForm" class="extractor-form" autocomplete="off">
+                <div class="form-field">
+                    <label for="transferName">نام جاب</label>
+                    <input id="transferName" name="name" type="text" maxlength="255" placeholder="مثلاً انتقال اخبار منتخب">
+                </div>
+                <div class="form-field">
+                    <label for="transferExtractionJob">جاب استخراج مبدا</label>
+                    <select id="transferExtractionJob" name="extraction_job_id" required></select>
+                </div>
+                <div class="form-field">
+                    <label for="transferAccount">اکانت تلگرام</label>
+                    <select id="transferAccount" name="provider_account_id" required></select>
+                </div>
+                <div class="form-field source-field">
+                    <label for="transferDestination">مقصد</label>
+                    <input id="transferDestination" name="destination_ref" type="text" dir="ltr" required placeholder="@channel یا لینک مقصد">
+                </div>
+                <div class="form-field">
+                    <label for="transferMode">روش انتقال</label>
+                    <select id="transferMode" name="mode">
+                        <option value="copy">کپی محتوا</option>
+                        <option value="forward">فوروارد اصلی</option>
+                    </select>
+                </div>
+                <div class="extractor-form-actions">
+                    <button type="submit" class="btn primary" id="createTransferJob">
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                        ساخت جاب انتقال
+                    </button>
+                </div>
+            </form>
+        </article>
 
         <article class="surface">
             <div class="surface-head">
@@ -614,6 +725,17 @@
             <div id="transferJobsList" class="v2-job-list">
                 <div class="loading-box">در حال دریافت جاب‌های انتقال...</div>
             </div>
+        </article>
+
+        <article class="surface section-gap job-workspace" id="transferJobWorkspace" hidden>
+            <div class="workspace-head">
+                <div>
+                    <span class="eyebrow">TRANSFER JOB</span>
+                    <h2 id="transferWorkspaceTitle">مشاهده جاب انتقال</h2>
+                </div>
+                <button type="button" class="btn ghost" data-close-workspace="transfer">بستن</button>
+            </div>
+            <div id="transferWorkspaceBody" class="workspace-body"></div>
         </article>
 
     </section>
@@ -656,22 +778,29 @@
         class="panel"
         data-panel-content="posts"
     >
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">CONTENT LIBRARY</span>
+                <h2>کتابخانه پست‌ها</h2>
+                <p>متن، رسانه، لینک پست اصلی، دانلود و هشتگ‌ها در یک نما.</p>
+            </div>
+            <div class="section-actions">
+                <input id="contentSearch" class="text-input" type="search" placeholder="جستجو در متن یا منبع">
+                <button type="button" class="btn secondary" id="reloadContentLibrary">
+                    <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                    بروزرسانی
+                </button>
+            </div>
+        </div>
 
-        <div class="empty-state">
+        <div class="content-library-stats">
+            <article><span>کل نمایش</span><strong id="contentLibraryCount">۰</strong></article>
+            <article><span>دارای هشتگ</span><strong id="contentHashtagCount">۰</strong></article>
+            <article><span>رسانه</span><strong id="contentMediaCount">۰</strong></article>
+        </div>
 
-            <h2>
-                پست‌های استخراجی
-            </h2>
-
-            <p>
-                ذخیره اختیاری محتوای استخراجی
-                در Stage 03 فعال خواهد شد.
-            </p>
-
-            <span class="badge">
-                Stage 03
-            </span>
-
+        <div id="contentLibraryList" class="content-library-list">
+            <div class="loading-box">در حال دریافت محتوا...</div>
         </div>
 
     </section>
@@ -948,12 +1077,12 @@
             </h2>
 
             <p>
-                لاگ زنده هر عملیات از بخش «عملیات نسخه قبلی»
-                و جزئیات همان جاب در دسترس است.
+                لاگ اختصاصی هر عملیات در صفحه مشاهده همان جاب
+                استخراج یا انتقال در دسترس است.
             </p>
 
             <span class="badge">
-                Stage 07
+                Stage 08.1
             </span>
 
         </div>
@@ -1367,7 +1496,7 @@
                     </span>
 
                     <code>
-                        07 / 16
+                        08.1 / 16
                     </code>
 
                 </div>
@@ -1396,6 +1525,14 @@
 
 <script
     src="{{ url_for('static', filename='stage07.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='stage08.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='operations-center.js') }}"
 ></script>
 
 </body>

@@ -1,0 +1,337 @@
+.section-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .65rem;
+}
+
+.extractor-builder[hidden],
+.transfer-builder[hidden],
+.job-workspace[hidden] {
+    display: none !important;
+}
+
+.transfer-builder {
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(14, 165, 233, .18);
+    background: radial-gradient(circle at 100% 0, rgba(14, 165, 233, .09), transparent 34%), #fff;
+}
+
+.operations-job-card {
+    display: grid;
+    grid-template-columns: minmax(190px, 1.7fr) repeat(3, minmax(88px, .62fr)) auto;
+    gap: .8rem;
+    align-items: center;
+}
+
+.operations-job-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    padding-top: .7rem;
+    border-top: 1px dashed #dbe3ef;
+}
+
+.operations-job-actions .btn {
+    min-height: 36px;
+    padding: .45rem .7rem;
+    font-size: .78rem;
+}
+
+.operations-job-actions .danger-soft {
+    color: #b91c1c;
+    background: #fef2f2;
+}
+
+.job-workspace {
+    border: 1px solid rgba(79, 70, 229, .18);
+    box-shadow: 0 22px 65px rgba(15, 23, 42, .09);
+}
+
+.workspace-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e8edf5;
+}
+
+.workspace-head h2 {
+    margin: .25rem 0 0;
+}
+
+.workspace-body {
+    display: grid;
+    gap: 1.1rem;
+    padding-top: 1rem;
+}
+
+.job-stat-grid,
+.content-library-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.job-stat-grid article,
+.content-library-stats article {
+    display: grid;
+    gap: .25rem;
+    min-height: 92px;
+    padding: .9rem;
+    border: 1px solid #e5eaf2;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #fff, #f8fafc);
+}
+
+.job-stat-grid span,
+.content-library-stats span {
+    color: #64748b;
+    font-size: .78rem;
+}
+
+.job-stat-grid strong,
+.content-library-stats strong {
+    color: #172033;
+    font-size: 1.45rem;
+}
+
+.workspace-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+}
+
+.workspace-tabs button {
+    padding: .52rem .75rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 999px;
+    color: #475569;
+    background: #fff;
+}
+
+.workspace-tabs button.active {
+    color: #fff;
+    border-color: #4f46e5;
+    background: #4f46e5;
+}
+
+.workspace-panel[hidden] {
+    display: none;
+}
+
+.workspace-panel {
+    padding: .9rem;
+    border: 1px solid #e5eaf2;
+    border-radius: 14px;
+    background: #fbfdff;
+}
+
+.operation-edit-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.operation-edit-form label {
+    display: grid;
+    gap: .35rem;
+    color: #334155;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.operation-edit-form input,
+.operation-edit-form select {
+    width: 100%;
+    min-height: 43px;
+    padding: .6rem .7rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 11px;
+    background: #fff;
+}
+
+.operation-edit-form .full,
+.operation-edit-form .form-actions {
+    grid-column: 1 / -1;
+}
+
+.form-actions {
+    display: flex;
+    gap: .55rem;
+}
+
+.operation-log-list {
+    display: grid;
+    gap: .45rem;
+    max-height: 430px;
+    overflow: auto;
+}
+
+.operation-log-row {
+    display: grid;
+    grid-template-columns: 145px 115px 1fr;
+    gap: .7rem;
+    align-items: start;
+    padding: .65rem .75rem;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: inset 3px 0 #cbd5e1;
+    font-size: .79rem;
+}
+
+.operation-log-row.error {
+    box-shadow: inset 3px 0 #ef4444;
+}
+
+.operation-log-row.warning {
+    box-shadow: inset 3px 0 #f59e0b;
+}
+
+.operation-log-row code {
+    color: #4338ca;
+}
+
+.content-library-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 1rem;
+}
+
+.content-library-list,
+.job-content-list {
+    display: grid;
+    gap: .75rem;
+}
+
+.content-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .8rem;
+    padding: .9rem;
+    border: 1px solid #e5eaf2;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.content-row-main {
+    min-width: 0;
+}
+
+.content-row-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .55rem;
+}
+
+.content-row-head strong {
+    color: #1e293b;
+}
+
+.content-row-head small {
+    color: #64748b;
+}
+
+.content-row-text {
+    margin: 0;
+    color: #334155;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.content-row-actions {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+
+.content-row-actions .btn {
+    white-space: nowrap;
+    min-height: 35px;
+    padding: .42rem .65rem;
+    font-size: .75rem;
+}
+
+.hashtag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .65rem;
+}
+
+.hashtag-chip {
+    padding: .28rem .5rem;
+    border-radius: 999px;
+    color: #0369a1;
+    background: #e0f2fe;
+    font-size: .73rem;
+    direction: rtl;
+}
+
+.transfer-state {
+    padding: .28rem .52rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.transfer-state.listed { color: #475569; background: #f1f5f9; }
+.transfer-state.transferring { color: #92400e; background: #fef3c7; }
+.transfer-state.transferred { color: #166534; background: #dcfce7; }
+.transfer-state.failed { color: #991b1b; background: #fee2e2; }
+.transfer-state.skipped { color: #5b21b6; background: #ede9fe; }
+
+.empty-inline {
+    padding: 1.2rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    color: #64748b;
+    text-align: center;
+}
+
+@media (max-width: 1050px) {
+    .operations-job-card {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .job-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .section-actions,
+    .workspace-head {
+        width: 100%;
+    }
+
+    .operations-job-card,
+    .job-stat-grid,
+    .content-library-stats,
+    .operation-edit-form {
+        grid-template-columns: 1fr;
+    }
+
+    .operation-edit-form .full,
+    .operation-edit-form .form-actions {
+        grid-column: auto;
+    }
+
+    .content-row {
+        grid-template-columns: 1fr;
+    }
+
+    .content-row-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .operation-log-row {
+        grid-template-columns: 1fr;
+        gap: .3rem;
+    }
+}
