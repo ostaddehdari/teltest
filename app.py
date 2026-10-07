@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.8.1",
+    "0.8.2",
 )
 
 ADMIN_USERNAME = os.getenv(
@@ -2192,6 +2192,18 @@ init_telegram_extractor_v2(
     account_get=account_get,
 )
 # TELTEST_TELEGRAM_EXTRACTOR_V2_END
+
+
+# TELTEST_PROVIDER_DESTINATIONS_START
+from provider_destinations import init_provider_destinations
+
+init_provider_destinations(
+    app=app,
+    login_required=login_required,
+    api_post_required=api_post_required,
+    account_get=account_get,
+)
+# TELTEST_PROVIDER_DESTINATIONS_END
 
 
 # TELTEST_OPERATIONS_CENTER_START

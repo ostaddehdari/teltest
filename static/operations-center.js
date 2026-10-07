@@ -17,6 +17,7 @@
     let meta = { accounts: [], channels: [] };
     let extractionJobs = [];
     let transferJobs = [];
+    let transferProviders = [];
 
     function esc(value) {
         const node = document.createElement("div");
@@ -91,6 +92,9 @@
         const state = showTransfer
             ? `<span class="transfer-state ${esc(item.transfer_status || 'listed')}">${esc(statusNames[item.transfer_status] || item.transfer_status)}</span>`
             : "";
+        const destination = showTransfer
+            ? `<span class="badge">${esc(item.provider_label || item.provider_code || "مقصد")} · ${esc(item.destination_ref || "—")}</span>`
+            : "";
         return `
             <article class="content-row">
                 <div class="content-row-main">
@@ -100,6 +104,7 @@
                         <small>${esc(item.published_at || "بدون تاریخ")}</small>
                         <span class="badge">${esc(item.content_type || "text")}</span>
                         ${state}
+                        ${destination}
                     </div>
                     <p class="content-row-text">${esc(clip(item.raw_text) || `[${item.content_type || "محتوا"}]`)}</p>
                     ${hashtagsHtml(item.hashtags)}
@@ -135,8 +140,98 @@
 
     async function loadMeta() {
         meta = await api("/api/v2/telegram-extractor/meta");
-        const transferAccount = document.getElementById("transferAccount");
-        if (transferAccount) transferAccount.innerHTML = accountOptions();
+    }
+
+    function providerOptions(selected) {
+        return transferProviders.map((item) => `
+            <option value="${esc(item.code)}" ${item.code === selected ? "selected" : ""} ${item.configured ? "" : "disabled"}>
+                ${esc(item.label)}${item.configured ? "" : " — تنظیم نشده"}
+            </option>
+        `).join("");
+    }
+
+    function destinationRowHtml(value = {}) {
+        const selected = value.provider_code || transferProviders.find((item) => item.configured)?.code || "telegram_user";
+        return `
+            <div class="transfer-destination-row" data-transfer-destination-row>
+                <label>پروایدر انتقال
+                    <select data-destination-provider>${providerOptions(selected)}</select>
+                    <small class="provider-health" data-provider-health></small>
+                </label>
+                <label data-destination-account-wrap>اکانت تلگرام
+                    <select data-destination-account>${accountOptions(value.provider_account_id)}</select>
+                </label>
+                <label>شناسه کانال / مقصد
+                    <input data-destination-ref dir="ltr" value="${esc(value.destination_ref || "")}" required>
+                    <small data-destination-hint></small>
+                </label>
+                <label>روش انتقال
+                    <select data-destination-mode></select>
+                </label>
+                <button type="button" class="btn danger-soft" data-remove-transfer-destination>حذف</button>
+            </div>
+        `;
+    }
+
+    function configureDestinationRow(row, preferredMode) {
+        const code = row.querySelector("[data-destination-provider]")?.value;
+        const provider = transferProviders.find((item) => item.code === code) || transferProviders[0];
+        if (!provider) return;
+        const accountWrap = row.querySelector("[data-destination-account-wrap]");
+        if (accountWrap) accountWrap.hidden = !provider.requires_account;
+        const mode = row.querySelector("[data-destination-mode]");
+        if (mode) {
+            mode.innerHTML = (provider.modes || ["copy"]).map((item) => `<option value="${esc(item)}" ${item === preferredMode ? "selected" : ""}>${esc(modeNames[item] || item)}</option>`).join("");
+        }
+        const destination = row.querySelector("[data-destination-ref]");
+        if (destination && !destination.value && provider.default_destination) destination.value = provider.default_destination;
+        if (destination) destination.placeholder = provider.destination_hint || "شناسه مقصد";
+        const hint = row.querySelector("[data-destination-hint]");
+        if (hint) hint.textContent = provider.destination_hint || "";
+        const health = row.querySelector("[data-provider-health]");
+        if (health) {
+            health.textContent = provider.configured ? "آماده و متصل" : "ابتدا در بخش پروایدرها تنظیم شود";
+            health.className = `provider-health ${provider.configured ? "ready" : "missing"}`;
+        }
+    }
+
+    function addDestinationRow(container, value = {}) {
+        if (!container) return;
+        container.insertAdjacentHTML("beforeend", destinationRowHtml(value));
+        const row = container.lastElementChild;
+        configureDestinationRow(row, value.mode || "copy");
+    }
+
+    function hydrateDestinationRows(container, values = []) {
+        if (!container) return;
+        container.innerHTML = "";
+        const list = values.length ? values : [{}];
+        list.forEach((value) => addDestinationRow(container, value));
+    }
+
+    function collectDestinations(container) {
+        return [...container.querySelectorAll("[data-transfer-destination-row]")].map((row) => {
+            const providerCode = row.querySelector("[data-destination-provider]").value;
+            const provider = transferProviders.find((item) => item.code === providerCode);
+            return {
+                provider_code: providerCode,
+                provider_account_id: provider?.requires_account
+                    ? Number(row.querySelector("[data-destination-account]").value)
+                    : null,
+                destination_ref: row.querySelector("[data-destination-ref]").value.trim(),
+                mode: row.querySelector("[data-destination-mode]").value,
+            };
+        });
+    }
+
+    async function loadTransferProviders() {
+        const editors = [...document.querySelectorAll(".transfer-destinations-list")].map((container) => ({
+            container,
+            values: container.children.length ? collectDestinations(container) : [],
+        }));
+        const data = await api("/api/v2/transfer-providers");
+        transferProviders = data.providers || [];
+        editors.forEach(({ container, values }) => hydrateDestinationRows(container, values));
     }
 
     function extractionCard(item) {
@@ -240,11 +335,15 @@
     function transferCard(item) {
         const state = String(item.status || "draft");
         const counts = item.counts || {};
+        const destinations = item.destinations || [];
+        const providerText = destinations.length
+            ? destinations.map((destination) => destination.provider_label).join("، ")
+            : "بدون مقصد";
         return `
             <article class="v2-job-card operations-job-card">
                 <div class="v2-job-title">
                     <strong>${esc(item.name || `انتقال #${item.id}`)}</strong>
-                    <small class="ltr">${esc(item.destination_ref || "بدون مقصد")}</small>
+                    <small>${number(destinations.length)} مقصد · ${esc(providerText)}</small>
                 </div>
                 <div class="v2-job-metric"><span>در فهرست</span><strong>${number(counts.listed)}</strong></div>
                 <div class="v2-job-metric"><span>در حال انتقال</span><strong>${number(counts.transferring)}</strong></div>
@@ -275,19 +374,33 @@
 
     function transferEditForm(data) {
         const job = data.job;
-        const destination = data.destination || {};
         return `
             <form class="operation-edit-form" data-edit-transfer-form="${job.id}">
                 <label>نام جاب<input name="name" value="${esc(job.name || "")}" required></label>
-                <label>اکانت<select name="provider_account_id" required>${accountOptions(destination.provider_account_id)}</select></label>
-                <label class="full">مقصد<input name="destination_ref" dir="ltr" value="${esc(destination.destination_ref || "")}" required></label>
-                <label>روش انتقال<select name="mode">
-                    <option value="copy" ${destination.mode === "copy" ? "selected" : ""}>کپی محتوا</option>
-                    <option value="forward" ${destination.mode === "forward" ? "selected" : ""}>فوروارد اصلی</option>
-                </select></label>
+                <div class="transfer-destinations-editor full">
+                    <div class="transfer-destinations-head">
+                        <div><strong>پروایدرها و مقصدهای جاب</strong><small>ویرایش مقصدها صف انتقال را بازسازی می‌کند.</small></div>
+                        <button type="button" class="btn secondary" data-add-edit-destination>اضافه‌کردن پروایدر</button>
+                    </div>
+                    <div class="transfer-destinations-list" data-edit-destinations-list></div>
+                </div>
                 <div class="form-actions"><button class="btn primary" type="submit">ذخیره و بازنشانی صف</button></div>
             </form>
         `;
+    }
+
+    function destinationSummary(destinations) {
+        if (!(destinations || []).length) return '<div class="empty-inline">مقصدی ثبت نشده است.</div>';
+        return `<div class="destination-summary-list">${destinations.map((item) => `
+            <div class="destination-summary-card">
+                <strong>${esc(item.provider_label || item.provider_code)}</strong>
+                <code dir="ltr">${esc(item.destination_ref || "—")}</code>
+                <small>فهرست: ${number(item.counts?.listed)}</small>
+                <small>در حال انتقال: ${number(item.counts?.transferring)}</small>
+                <small>منتقل: ${number(item.counts?.transferred)}</small>
+                <small>خطا: ${number(item.counts?.failed)}</small>
+            </div>
+        `).join("")}</div>`;
     }
 
     async function openTransferWorkspace(id, tab = "summary") {
@@ -314,10 +427,10 @@
                     { key: "logs", label: "لاگ جاب" }, { key: "edit", label: "ویرایش" },
                 ])}
                 <div class="workspace-panel" data-workspace-panel="transfer:summary">
-                    <div class="settings-row"><span>مقصد</span><code>${esc(data.destination?.destination_ref || "—")}</code></div>
-                    <div class="settings-row"><span>روش</span><strong>${esc(modeNames[data.destination?.mode] || data.destination?.mode || "—")}</strong></div>
                     <div class="settings-row"><span>وضعیت</span><strong>${esc(statusNames[data.job.status] || data.job.status)}</strong></div>
+                    <div class="settings-row"><span>تعداد مقصدها</span><strong>${number((data.destinations || []).length)}</strong></div>
                     <div class="settings-row"><span>تعداد اجرا</span><strong>${number((data.runs || []).length)}</strong></div>
+                    ${destinationSummary(data.destinations)}
                 </div>
                 <div class="workspace-panel" data-workspace-panel="transfer:items" hidden>
                     <div class="job-content-list">${(data.items || []).length ? data.items.map((item) => contentRow(item, true)).join("") : '<div class="empty-inline">هنوز پستی وارد فهرست انتقال نشده است.</div>'}</div>
@@ -325,6 +438,7 @@
                 <div class="workspace-panel" data-workspace-panel="transfer:logs" hidden>${logRows(data.logs)}</div>
                 <div class="workspace-panel" data-workspace-panel="transfer:edit" hidden>${transferEditForm(data)}</div>
             `;
+            hydrateDestinationRows(body.querySelector("[data-edit-destinations-list]"), data.destinations || []);
             activateTab(`transfer:${tab}`);
         } catch (error) {
             body.innerHTML = `<div class="empty-inline">${esc(error.message)}</div>`;
@@ -388,23 +502,93 @@
         const button = document.getElementById("createTransferJob");
         const payload = Object.fromEntries(new FormData(form).entries());
         payload.extraction_job_id = Number(payload.extraction_job_id);
-        payload.provider_account_id = Number(payload.provider_account_id);
+        const container = document.getElementById("transferDestinationsBuilder");
+        payload.destinations = collectDestinations(container);
+        if (!payload.destinations.length) {
+            notify("حداقل یک پروایدر و مقصد اضافه کنید.", "error");
+            return;
+        }
         setBusy(button, true, "در حال ساخت...");
         try {
             const result = await api("/api/v2/operations/transfer-jobs", { method: "POST", body: JSON.stringify(payload) });
             notify(`${result.message} شماره ${number(result.job_id)}`);
             form.reset();
+            hydrateDestinationRows(container);
             document.getElementById("transferBuilder").hidden = true;
             await loadTransferJobs();
         } catch (error) { notify(error.message, "error"); }
         finally { setBusy(button, false); }
     }
 
+    async function loadTelegramBotSettings() {
+        const form = document.getElementById("telegramBotSettingsForm");
+        if (!form) return;
+        try {
+            const data = await api("/api/settings/telegram-bot");
+            document.getElementById("telegramBotChatId").value = data.chat_id || "";
+            document.getElementById("telegramBotTokenCurrent").textContent = data.token_masked
+                ? `ذخیره‌شده: ${data.token_masked}`
+                : "توکن ربات تلگرام ذخیره نشده است.";
+            const badge = document.getElementById("telegramBotStatusBadge");
+            badge.textContent = data.configured ? "آماده" : "تنظیم نشده";
+            badge.className = data.configured ? "badge success" : "badge warning";
+        } catch (error) {
+            notify(error.message, "error");
+        }
+    }
+
+    async function saveTelegramBotSettings(event) {
+        event.preventDefault();
+        const button = document.getElementById("saveTelegramBotSettings");
+        setBusy(button, true, "در حال ذخیره...");
+        try {
+            const result = await api("/api/settings/telegram-bot", {
+                method: "POST",
+                body: JSON.stringify({
+                    token: document.getElementById("telegramBotToken").value.trim(),
+                    chat_id: document.getElementById("telegramBotChatId").value.trim(),
+                }),
+            });
+            document.getElementById("telegramBotToken").value = "";
+            notify(result.message);
+            await loadTelegramBotSettings();
+            await loadTransferProviders();
+        } catch (error) {
+            notify(error.message, "error");
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
+    async function testTelegramBotSettings(button) {
+        setBusy(button, true, "در حال تست...");
+        try {
+            const result = await api("/api/settings/telegram-bot/test", {
+                method: "POST",
+                body: JSON.stringify({ chat_id: document.getElementById("telegramBotChatId").value.trim() }),
+            });
+            notify(result.message);
+        } catch (error) {
+            notify(error.message, "error");
+        } finally {
+            setBusy(button, false);
+        }
+    }
+
     document.getElementById("openExtractorBuilder")?.addEventListener("click", () => { document.getElementById("extractorBuilder").hidden = false; });
     document.getElementById("closeExtractorBuilder")?.addEventListener("click", () => { document.getElementById("extractorBuilder").hidden = true; });
-    document.getElementById("openTransferBuilder")?.addEventListener("click", () => { document.getElementById("transferBuilder").hidden = false; });
+    document.getElementById("openTransferBuilder")?.addEventListener("click", () => {
+        document.getElementById("transferBuilder").hidden = false;
+        const container = document.getElementById("transferDestinationsBuilder");
+        if (container && !container.children.length) hydrateDestinationRows(container);
+    });
     document.getElementById("closeTransferBuilder")?.addEventListener("click", () => { document.getElementById("transferBuilder").hidden = true; });
     document.getElementById("transferBuilderForm")?.addEventListener("submit", createTransfer);
+    document.getElementById("telegramBotSettingsForm")?.addEventListener("submit", saveTelegramBotSettings);
+    document.getElementById("testTelegramBotSettings")?.addEventListener("click", function () { testTelegramBotSettings(this); });
+    document.getElementById("addTransferDestination")?.addEventListener("click", () => {
+        addDestinationRow(document.getElementById("transferDestinationsBuilder"));
+    });
     document.getElementById("reloadExtractionJobs")?.addEventListener("click", loadExtractionJobs);
     document.getElementById("reloadTransferJobs")?.addEventListener("click", loadTransferJobs);
     document.getElementById("reloadContentLibrary")?.addEventListener("click", loadContentLibrary);
@@ -428,6 +612,11 @@
             event.preventDefault();
             const id = transfer.dataset.editTransferForm;
             const payload = Object.fromEntries(new FormData(transfer).entries());
+            payload.destinations = collectDestinations(transfer.querySelector("[data-edit-destinations-list]"));
+            if (!payload.destinations.length) {
+                notify("حداقل یک پروایدر و مقصد لازم است.", "error");
+                return;
+            }
             try {
                 const result = await api(`/api/v2/operations/transfer-jobs/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
                 notify(result.message); await loadTransferJobs(); await openTransferWorkspace(id, "summary");
@@ -436,6 +625,18 @@
     });
 
     document.addEventListener("click", (event) => {
+        const addEditDestination = event.target.closest("[data-add-edit-destination]");
+        if (addEditDestination) {
+            addDestinationRow(addEditDestination.closest("form")?.querySelector("[data-edit-destinations-list]"));
+            return;
+        }
+        const removeDestination = event.target.closest("[data-remove-transfer-destination]");
+        if (removeDestination) {
+            const list = removeDestination.closest(".transfer-destinations-list");
+            removeDestination.closest("[data-transfer-destination-row]")?.remove();
+            if (list && !list.children.length) addDestinationRow(list);
+            return;
+        }
         const tab = event.target.closest("[data-workspace-tab]");
         if (tab) { activateTab(tab.dataset.workspaceTab); return; }
         const close = event.target.closest("[data-close-workspace]");
@@ -457,6 +658,16 @@
         }
     });
 
-    Promise.all([loadMeta(), loadExtractionJobs(), loadTransferJobs(), loadContentLibrary()])
+    document.addEventListener("change", (event) => {
+        const provider = event.target.closest("[data-destination-provider]");
+        if (provider) configureDestinationRow(provider.closest("[data-transfer-destination-row]"), "copy");
+    });
+
+    Promise.all([loadMeta(), loadTransferProviders(), loadTelegramBotSettings()])
+        .then(() => {
+            const builder = document.getElementById("transferDestinationsBuilder");
+            hydrateDestinationRows(builder);
+            return Promise.all([loadExtractionJobs(), loadTransferJobs(), loadContentLibrary()]);
+        })
         .catch((error) => notify(error.message, "error"));
 })();

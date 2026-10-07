@@ -254,7 +254,7 @@
             </h1>
 
             <p>
-                نسخه {{ version }} · Stage 08.1
+                نسخه {{ version }} · Stage 08.2
             </p>
 
         </div>
@@ -671,7 +671,7 @@
             <div class="surface-head">
                 <div>
                     <h2>ساخت جاب انتقال</h2>
-                    <p>محتوای یک جاب استخراج را به مقصد تلگرام منتقل کنید.</p>
+                    <p>یک جاب استخراج را هم‌زمان به چند مقصد در تلگرام، بله، ایتا و روبیکا متصل کنید.</p>
                 </div>
                 <button type="button" class="btn ghost" id="closeTransferBuilder">بستن</button>
             </div>
@@ -685,20 +685,18 @@
                     <label for="transferExtractionJob">جاب استخراج مبدا</label>
                     <select id="transferExtractionJob" name="extraction_job_id" required></select>
                 </div>
-                <div class="form-field">
-                    <label for="transferAccount">اکانت تلگرام</label>
-                    <select id="transferAccount" name="provider_account_id" required></select>
-                </div>
-                <div class="form-field source-field">
-                    <label for="transferDestination">مقصد</label>
-                    <input id="transferDestination" name="destination_ref" type="text" dir="ltr" required placeholder="@channel یا لینک مقصد">
-                </div>
-                <div class="form-field">
-                    <label for="transferMode">روش انتقال</label>
-                    <select id="transferMode" name="mode">
-                        <option value="copy">کپی محتوا</option>
-                        <option value="forward">فوروارد اصلی</option>
-                    </select>
+                <div class="transfer-destinations-editor full">
+                    <div class="transfer-destinations-head">
+                        <div>
+                            <strong>پروایدرها و مقصدها</strong>
+                            <small>برای هر پروایدر، شناسه کانال یا مقصد همان پیام‌رسان را وارد کنید.</small>
+                        </div>
+                        <button type="button" class="btn secondary" id="addTransferDestination">
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                            اضافه‌کردن پروایدر
+                        </button>
+                    </div>
+                    <div id="transferDestinationsBuilder" class="transfer-destinations-list"></div>
                 </div>
                 <div class="extractor-form-actions">
                     <button type="submit" class="btn primary" id="createTransferJob">
@@ -713,7 +711,7 @@
             <div class="surface-head">
                 <div>
                     <h2>جاب‌های انتقال</h2>
-                    <p>هر جاب می‌تواند در مراحل بعد چند مقصد مستقل داشته باشد.</p>
+                    <p>هر جاب می‌تواند چند پروایدر و چند مقصد مستقل داشته باشد.</p>
                 </div>
 
                 <button type="button" class="btn secondary" id="reloadTransferJobs">
@@ -879,6 +877,63 @@
                     روی سرور ذخیره می‌شود.
 
                 </p>
+
+            </article>
+
+
+            <article class="surface">
+
+                <div class="surface-head">
+
+                    <div>
+
+                        <h2>
+                            ربات تلگرام
+                        </h2>
+
+                        <p>
+                            Telegram Bot API
+                        </p>
+
+                    </div>
+
+                    <span class="badge" id="telegramBotStatusBadge">بررسی...</span>
+
+                </div>
+
+                <form id="telegramBotSettingsForm" class="stack-form">
+
+                    <label>Bot Token</label>
+
+                    <input
+                        id="telegramBotToken"
+                        class="text-input ltr"
+                        type="password"
+                        placeholder="123456:ABC..."
+                    >
+
+                    <div id="telegramBotTokenCurrent" class="help-text ltr"></div>
+
+                    <label>Chat ID پیش‌فرض برای تست</label>
+
+                    <input
+                        id="telegramBotChatId"
+                        class="text-input ltr"
+                        type="text"
+                        placeholder="@channel یا -100..."
+                    >
+
+                    <p class="help-text">در هر جاب انتقال می‌توانید مقصد دیگری وارد کنید. ربات باید در کانال مقصد مدیر باشد.</p>
+
+                    <button id="saveTelegramBotSettings" type="submit" class="btn primary">
+                        ذخیره تنظیمات ربات تلگرام
+                    </button>
+
+                    <button id="testTelegramBotSettings" type="button" class="btn secondary">
+                        تست ربات و مقصد
+                    </button>
+
+                </form>
 
             </article>
 
@@ -1082,7 +1137,7 @@
             </p>
 
             <span class="badge">
-                Stage 08.1
+                Stage 08.2
             </span>
 
         </div>
@@ -1496,7 +1551,7 @@
                     </span>
 
                     <code>
-                        08.1 / 16
+                        08.2 / 16
                     </code>
 
                 </div>

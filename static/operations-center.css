@@ -17,6 +17,95 @@
     background: radial-gradient(circle at 100% 0, rgba(14, 165, 233, .09), transparent 34%), #fff;
 }
 
+.transfer-destinations-editor {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: .8rem;
+    padding: 1rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 16px;
+    background: #f8fafc;
+}
+
+.transfer-destinations-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.transfer-destinations-head > div {
+    display: grid;
+    gap: .25rem;
+}
+
+.transfer-destinations-head small {
+    color: #64748b;
+}
+
+.transfer-destinations-list,
+.destination-summary-list {
+    display: grid;
+    gap: .7rem;
+}
+
+.transfer-destination-row {
+    display: grid;
+    grid-template-columns: minmax(175px, 1fr) minmax(180px, 1.2fr) minmax(200px, 1.4fr) minmax(125px, .7fr) auto;
+    gap: .65rem;
+    align-items: end;
+    padding: .8rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 13px;
+    background: #fff;
+}
+
+.transfer-destination-row label {
+    display: grid;
+    gap: .35rem;
+    color: #334155;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.transfer-destination-row input,
+.transfer-destination-row select {
+    width: 100%;
+    min-height: 42px;
+    padding: .55rem .65rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.transfer-destination-row .provider-health {
+    min-height: 20px;
+    color: #64748b;
+    font-size: .7rem;
+}
+
+.transfer-destination-row .provider-health.ready { color: #15803d; }
+.transfer-destination-row .provider-health.missing { color: #b45309; }
+
+.destination-summary-card {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(190px, 1.4fr) repeat(4, minmax(82px, .55fr));
+    gap: .6rem;
+    align-items: center;
+    padding: .8rem;
+    border: 1px solid #e5eaf2;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.destination-summary-card code {
+    overflow-wrap: anywhere;
+}
+
+.destination-summary-card small {
+    color: #64748b;
+}
+
 .operations-job-card {
     display: grid;
     grid-template-columns: minmax(190px, 1.7fr) repeat(3, minmax(88px, .62fr)) auto;
@@ -301,6 +390,11 @@
     .job-stat-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+
+    .transfer-destination-row,
+    .destination-summary-card {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 700px) {
@@ -333,5 +427,15 @@
     .operation-log-row {
         grid-template-columns: 1fr;
         gap: .3rem;
+    }
+
+    .transfer-destinations-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .transfer-destination-row,
+    .destination-summary-card {
+        grid-template-columns: 1fr;
     }
 }
