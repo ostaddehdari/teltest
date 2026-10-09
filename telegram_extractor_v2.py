@@ -4,7 +4,7 @@ import re
 import time
 
 from contextlib import closing
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from flask import jsonify, request
@@ -321,8 +321,17 @@ async def fetch_messages(client, job, max_items):
                 min_id=max(0, int(job["start_external_id"]) - 1),
                 reverse=True,
             )
-        elif start_mode == "incremental" and cursor:
-            kwargs.update(min_id=max(0, int(cursor)), reverse=True)
+        elif (
+            start_mode == "incremental"
+            or bool(job["watch_enabled"])
+        ) and cursor:
+            kwargs.update(
+                min_id=max(
+                    0,
+                    int(cursor),
+                ),
+                reverse=True,
+            )
 
         threshold = None
         if start_mode == "date":
@@ -521,23 +530,124 @@ def persist_messages(job_id, result, elapsed):
         published_dates = [item["published_at"] for item in messages if item["published_at"]]
         old_cursor = int(job["cursor_external_id"] or 0) if str(job["cursor_external_id"] or "").isdigit() else 0
         new_cursor = max([old_cursor, *numeric_ids]) if numeric_ids else old_cursor
-        cursor_date = max(published_dates) if published_dates else job["cursor_published_at"]
+        cursor_date = max(
+            published_dates
+        ) if published_dates else job[
+            "cursor_published_at"
+        ]
+
+        watch_enabled = bool(
+            job[
+                "watch_enabled"
+            ]
+        )
+
+        try:
+            poll_interval = int(
+                job[
+                    "poll_interval_minutes"
+                ]
+                or 5
+            )
+        except (
+            TypeError,
+            ValueError,
+        ):
+            poll_interval = 5
+
+        poll_interval = max(
+            1,
+            min(
+                1440,
+                poll_interval,
+            ),
+        )
+
+        try:
+            configured_limit = int(
+                json_load(
+                    job[
+                        "config_json"
+                    ],
+                    {},
+                ).get(
+                    "max_items",
+                    250,
+                )
+            )
+        except (
+            TypeError,
+            ValueError,
+        ):
+            configured_limit = 250
+
+        #
+        # اگر سقف کامل پر شده باشد احتمال Backlog وجود دارد.
+        # به جای صبر کردن تا Interval عادی، یک دقیقه بعد ادامه بده.
+        #
+        next_delay = (
+            1
+            if (
+                watch_enabled
+                and messages
+                and len(messages)
+                >= configured_limit
+            )
+            else poll_interval
+        )
+
+        next_run_at = (
+            (
+                datetime.now(
+                    timezone.utc
+                )
+                + timedelta(
+                    minutes=next_delay
+                )
+            )
+            .replace(
+                microsecond=0
+            )
+            .isoformat()
+            if watch_enabled
+            else None
+        )
+
+        final_status = (
+            "watching"
+            if watch_enabled
+            else "completed"
+        )
 
         conn.execute(
             """
             UPDATE extraction_jobs SET
-                source_key = ?, source_title = ?, status = 'completed',
-                cursor_external_id = ?, cursor_published_at = ?,
+                source_key = ?,
+                source_title = ?,
+                status = ?,
+                cursor_external_id = ?,
+                cursor_published_at = ?,
+                next_run_at = ?,
+                scheduler_failures = 0,
+                scheduler_backoff_until = NULL,
+                scheduler_last_tick = CURRENT_TIMESTAMP,
                 last_run_at = CURRENT_TIMESTAMP,
                 last_success_at = CURRENT_TIMESTAMP,
-                last_error = NULL, updated_at = CURRENT_TIMESTAMP
+                last_error = NULL,
+                updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             """,
             (
                 source_key,
                 source_title,
-                str(new_cursor) if new_cursor else job["cursor_external_id"],
+                final_status,
+                str(new_cursor)
+                if new_cursor
+                else job[
+                    "cursor_external_id"
+                ],
                 cursor_date,
+                next_run_at,
                 job_id,
             ),
         )
@@ -643,6 +753,42 @@ def init_telegram_extractor_v2(
         except (TypeError, ValueError) as exc:
             return jsonify(ok=False, error=str(exc) or "مقدار شروع معتبر نیست."), 400
 
+        watch_value = data.get(
+            "watch_enabled",
+            0,
+        )
+
+        watch_enabled = (
+            watch_value is True
+            or str(watch_value).strip().lower()
+            in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+        )
+
+        try:
+            poll_interval = int(
+                data.get(
+                    "poll_interval_minutes",
+                    5,
+                )
+            )
+
+            if not 1 <= poll_interval <= 1440:
+                raise ValueError(
+                    "فاصله بررسی باید بین ۱ تا ۱۴۴۰ دقیقه باشد."
+                )
+
+        except (TypeError, ValueError) as exc:
+            return jsonify(
+                ok=False,
+                error=str(exc)
+                or "فاصله بررسی معتبر نیست.",
+            ), 400
+
         rules = normalize_rules(
             data.get("rules") or {}
         )
@@ -660,22 +806,47 @@ def init_telegram_extractor_v2(
                     status, start_mode, start_date_utc, start_external_id,
                     watch_enabled, poll_interval_minutes, config_json, rules_json,
                     created_at, updated_at
-                ) VALUES (?, 'telegram', ?, ?, 'draft', ?, ?, ?, 0, 5, ?, ?,
+                ) VALUES (?, 'telegram', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                           CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 (
                     name,
                     account_id,
                     source_ref,
+                    (
+                        "watching"
+                        if watch_enabled
+                        else "draft"
+                    ),
                     start_mode,
                     start_date_utc,
                     start_external_id,
+                    int(watch_enabled),
+                    poll_interval,
                     json_dump(config),
                     json_dump(rules),
                 ),
             )
-            conn.commit()
+
             job_id = cursor.lastrowid
+
+            if watch_enabled:
+
+                conn.execute(
+                    """
+                    UPDATE extraction_jobs
+                    SET
+                        next_run_at=?,
+                        updated_at=CURRENT_TIMESTAMP
+                    WHERE id=?
+                    """,
+                    (
+                        utc_now(),
+                        job_id,
+                    ),
+                )
+
+            conn.commit()
         write_operation_log(job_id, "JOB_CREATED", f"جاب استخراج برای {source_ref} ساخته شد.")
         return jsonify(ok=True, job_id=job_id, status="draft", message="جاب استخراج ساخته شد."), 201
 

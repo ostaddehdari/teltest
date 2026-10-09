@@ -65,6 +65,11 @@
 
     <link
         rel="stylesheet"
+        href="{{ url_for('static', filename='app-stage10.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
         href="{{ url_for('static', filename='operations-center.css') }}"
     >
 
@@ -604,6 +609,66 @@
                 <div class="form-field conditional-field" id="messageIdField" hidden>
                     <label for="extractorMessageId">Message ID شروع</label>
                     <input id="extractorMessageId" name="start_external_id" type="number" min="1" inputmode="numeric" placeholder="مثلاً 12500">
+                </div>
+
+
+
+                <div class="watch-builder full">
+
+                    <label class="watch-toggle">
+                        <input
+                            id="extractorWatchEnabledHidden"
+                            name="watch_enabled"
+                            type="hidden"
+                            value="0"
+                        >
+
+                        <input
+                            id="extractorWatchEnabled"
+                            name="watch_enabled"
+                            type="checkbox"
+                            value="1"
+                        >
+
+                        <span>
+                            <strong>
+                                پایش خودکار پیام‌های جدید
+                            </strong>
+
+                            <small>
+                                بعد از استخراج اولیه، فقط پیام‌های بعد از Cursor بررسی می‌شوند.
+                            </small>
+                        </span>
+                    </label>
+
+
+                    <div
+                        class="watch-interval-field"
+                        id="watchIntervalField"
+                        hidden
+                    >
+
+                        <label for="extractorPollInterval">
+                            بررسی هر
+                        </label>
+
+                        <div>
+                            <input
+                                id="extractorPollInterval"
+                                name="poll_interval_minutes"
+                                type="number"
+                                min="1"
+                                max="1440"
+                                value="5"
+                            >
+
+                            <span>
+                                دقیقه
+                            </span>
+                        </div>
+
+                    </div>
+
                 </div>
 
 
@@ -1673,7 +1738,7 @@
                     </span>
 
                     <code>
-                        09 / 16
+                        10 / 16
                     </code>
 
                 </div>

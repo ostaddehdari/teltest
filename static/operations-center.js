@@ -5,7 +5,7 @@
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
     const statusNames = {
         draft: "پیش‌نویس", pending: "در انتظار", running: "در حال اجرا",
-        completed: "تکمیل‌شده", failed: "خطادار", paused: "متوقف",
+        completed: "تکمیل‌شده", watching: "در حال پایش", failed: "خطادار", paused: "متوقف",
         listed: "در فهرست", transferring: "در حال انتقال",
         transferred: "منتقل‌شده", skipped: "ردشده",
     };
@@ -273,6 +273,14 @@
                 <div class="v2-job-metric"><span>محتوا</span><strong>${number(item.content_count)}</strong></div>
                 <div class="v2-job-metric"><span>اجرا</span><strong>${number(item.run_count)}</strong></div>
                 <div class="v2-job-metric"><span>Cursor</span><strong class="cursor-value">${esc(item.cursor_external_id || "—")}</strong></div>
+                <div class="v2-job-metric">
+                    <span>پایش</span>
+                    <strong>
+                        ${item.watch_enabled
+                            ? `هر ${number(item.poll_interval_minutes || 5)} دقیقه`
+                            : "خاموش"}
+                    </strong>
+                </div>
                 <span class="status-chip ${esc(state)}">${esc(statusNames[state] || state)}</span>
                 <div class="operations-job-actions">
                     <button class="btn soft" data-op-view-extraction="${item.id}"><i class="fa-regular fa-eye"></i> مشاهده</button>
@@ -318,6 +326,46 @@
                 <label>حداکثر پیام<input name="max_items" type="number" min="1" max="5000" value="${esc(job.config?.max_items || 250)}"></label>
                 <label>تاریخ شمسی جدید<input name="start_date_jalali" placeholder="۱۴۰۵/۰۷/۱۴"></label>
                 <label>Message ID<input name="start_external_id" type="number" min="1" value="${esc(job.start_external_id || "")}"></label>
+
+                <div class="watch-edit-box full">
+
+                    <input
+                        type="hidden"
+                        name="watch_enabled"
+                        value="0"
+                    >
+
+                    <label class="watch-toggle compact">
+                        <input
+                            type="checkbox"
+                            name="watch_enabled"
+                            value="1"
+                            ${job.watch_enabled ? "checked" : ""}
+                        >
+
+                        <span>
+                            <strong>پایش خودکار</strong>
+                            <small>پیام‌های جدید بعد از Cursor</small>
+                        </span>
+                    </label>
+
+                    <label>
+                        فاصله بررسی
+                        <div class="interval-input">
+                            <input
+                                name="poll_interval_minutes"
+                                type="number"
+                                min="1"
+                                max="1440"
+                                value="${esc(job.poll_interval_minutes || 5)}"
+                                required
+                            >
+                            <span>دقیقه</span>
+                        </div>
+                    </label>
+
+                </div>
+
                 <div class="form-actions"><button class="btn primary" type="submit">ذخیره تغییرات</button></div>
             </form>
         `;
@@ -351,6 +399,22 @@
                     <div class="settings-row"><span>روش شروع</span><strong>${esc(modeNames[data.job.start_mode] || data.job.start_mode)}</strong></div>
                     <div class="settings-row"><span>Cursor</span><code>${esc(data.job.cursor_external_id || "—")}</code></div>
                     <div class="settings-row"><span>آخرین موفقیت</span><strong>${esc(data.job.last_success_at || "—")}</strong></div>
+                    <div class="settings-row">
+                        <span>پایش خودکار</span>
+                        <strong>${data.job.watch_enabled ? "فعال" : "غیرفعال"}</strong>
+                    </div>
+                    <div class="settings-row">
+                        <span>فاصله بررسی</span>
+                        <strong>${number(data.job.poll_interval_minutes || 5)} دقیقه</strong>
+                    </div>
+                    <div class="settings-row">
+                        <span>اجرای بعدی</span>
+                        <code>${esc(data.job.next_run_at || "—")}</code>
+                    </div>
+                    <div class="settings-row">
+                        <span>خطاهای متوالی Scheduler</span>
+                        <strong>${number(data.job.scheduler_failures || 0)}</strong>
+                    </div>
                 </div>
                 <div class="workspace-panel" data-workspace-panel="extraction:items" hidden>
                     <div class="job-content-list">${(data.items || []).length ? data.items.map((item) => contentRow(item)).join("") : '<div class="empty-inline">محتوایی برای این جاب نیست.</div>'}</div>

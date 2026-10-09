@@ -1,0 +1,123 @@
+/* ==========================================================
+   TELTEST STAGE 10 — WATCH / SCHEDULER
+   ========================================================== */
+
+.watch-builder,
+.watch-edit-box {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .85rem;
+    border: 1px solid #dbeafe;
+    border-radius: 15px;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(239, 246, 255, .88),
+            rgba(238, 242, 255, .72)
+        );
+}
+
+.watch-builder.full,
+.watch-edit-box.full {
+    grid-column: 1 / -1;
+}
+
+.watch-toggle {
+    display: flex !important;
+    align-items: center;
+    gap: .7rem;
+    flex: 1;
+    margin: 0 !important;
+    cursor: pointer;
+}
+
+.watch-toggle input[type="checkbox"] {
+    width: 19px !important;
+    height: 19px;
+    min-height: 0 !important;
+    accent-color: #4f46e5;
+}
+
+.watch-toggle span {
+    display: grid;
+    gap: .15rem;
+}
+
+.watch-toggle strong {
+    color: #1e293b;
+    font-size: .87rem;
+}
+
+.watch-toggle small {
+    margin: 0 !important;
+    color: #64748b;
+    font-size: .72rem;
+}
+
+.watch-toggle.compact {
+    min-width: 220px;
+}
+
+.watch-interval-field {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.watch-interval-field[hidden] {
+    display: none;
+}
+
+.watch-interval-field > div,
+.interval-input {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.watch-interval-field input,
+.interval-input input {
+    width: 100px !important;
+    min-height: 40px !important;
+    text-align: center;
+}
+
+.watch-interval-field span,
+.interval-input span {
+    color: #64748b;
+    font-size: .76rem;
+    white-space: nowrap;
+}
+
+.status-chip.watching {
+    color: #0369a1;
+    border-color: #bae6fd;
+    background: #f0f9ff;
+}
+
+.status-chip.watching::before {
+    background: #0ea5e9;
+    box-shadow: 0 0 0 4px rgba(14,165,233,.11);
+}
+
+@media (max-width: 720px) {
+
+    .watch-builder,
+    .watch-edit-box {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .watch-interval-field,
+    .watch-interval-field > div,
+    .interval-input {
+        width: 100%;
+    }
+
+    .watch-interval-field input,
+    .interval-input input {
+        flex: 1;
+        width: auto !important;
+    }
+}

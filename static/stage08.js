@@ -20,6 +20,7 @@
         pending: "در انتظار",
         running: "در حال اجرا",
         completed: "تکمیل‌شده",
+        watching: "در حال پایش",
         failed: "خطادار",
         paused: "متوقف",
     };
@@ -190,6 +191,34 @@
         box.hidden = true;
     }
 
+    function updateWatchFields() {
+
+        const enabled =
+            document.getElementById(
+                "extractorWatchEnabled"
+            )?.checked || false;
+
+        const field =
+            document.getElementById(
+                "watchIntervalField"
+            );
+
+        const input =
+            document.getElementById(
+                "extractorPollInterval"
+            );
+
+        if (field) {
+            field.hidden = !enabled;
+        }
+
+        if (input) {
+            input.required = enabled;
+        }
+
+    }
+
+
     function updateModeFields() {
         const mode = document.querySelector('input[name="start_mode"]:checked')?.value || "all";
         const dateField = document.getElementById("persianDateField");
@@ -260,6 +289,15 @@
                 <div class="run-result" data-run-result="${item.id}" hidden>
                     <span>سقف اجرا: ${number(config.max_items || 250)}</span>
                     <span>آخرین موفقیت: ${esc(item.last_success_at || "—")}</span>
+                    <span>
+                        پایش:
+                        ${item.watch_enabled
+                            ? `هر ${number(item.poll_interval_minutes || 5)} دقیقه`
+                            : "خاموش"}
+                    </span>
+                    ${item.watch_enabled
+                        ? `<span>اجرای بعدی: ${esc(item.next_run_at || "در انتظار")}</span>`
+                        : ""}
                 </div>
             </article>
         `;
@@ -305,8 +343,17 @@
             });
             notify(`${result.message} شماره ${number(result.job_id)}`);
             form.reset();
-            document.getElementById("extractorLimit").value = "250";
+
+            document.getElementById(
+                "extractorLimit"
+            ).value = "250";
+
+            document.getElementById(
+                "extractorPollInterval"
+            ).value = "5";
+
             updateModeFields();
+            updateWatchFields();
             document.dispatchEvent(new CustomEvent("teltest:extraction-changed"));
         } catch (error) {
             notify(error.message, "error");
@@ -363,6 +410,13 @@
     document.querySelectorAll('input[name="start_mode"]').forEach((item) => {
         item.addEventListener("change", updateModeFields);
     });
+    document.getElementById(
+        "extractorWatchEnabled"
+    )?.addEventListener(
+        "change",
+        updateWatchFields
+    );
+
     document.getElementById("openPersianDatePicker")?.addEventListener("click", openCalendar);
     document.getElementById("telegramExtractorForm")?.addEventListener("submit", createJob);
     document.getElementById("refreshExtractorMeta")?.addEventListener("click", async () => {
@@ -402,5 +456,6 @@
     });
 
     updateModeFields();
+    updateWatchFields();
     loadMeta().catch((error) => notify(error.message, "error"));
 })();

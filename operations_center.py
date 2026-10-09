@@ -662,15 +662,140 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
                     start_id = str(int(data.get("start_external_id") or start_id))
                 except (TypeError, ValueError):
                     return jsonify(ok=False, error="Message ID معتبر نیست."), 400
-            config = json_load(job["config_json"], {})
-            config["max_items"] = max_items
+            config = json_load(
+                job[
+                    "config_json"
+                ],
+                {},
+            )
+
+            config[
+                "max_items"
+            ] = max_items
+
+            watch_value = data.get(
+                "watch_enabled",
+                job[
+                    "watch_enabled"
+                ],
+            )
+
+            watch_enabled = (
+                watch_value is True
+                or str(
+                    watch_value
+                ).strip().lower()
+                in {
+                    "1",
+                    "true",
+                    "yes",
+                    "on",
+                }
+            )
+
+            try:
+                poll_interval = int(
+                    data.get(
+                        "poll_interval_minutes",
+                        job[
+                            "poll_interval_minutes"
+                        ]
+                        or 5,
+                    )
+                )
+
+                if not 1 <= poll_interval <= 1440:
+                    raise ValueError(
+                        "فاصله بررسی باید بین ۱ تا ۱۴۴۰ دقیقه باشد."
+                    )
+
+            except (
+                TypeError,
+                ValueError,
+            ) as exc:
+
+                return jsonify(
+                    ok=False,
+                    error=str(exc)
+                    or "فاصله بررسی معتبر نیست.",
+                ), 400
+
+            if watch_enabled:
+
+                next_run_at = (
+                    job[
+                        "next_run_at"
+                    ]
+                    or datetime.now(
+                        timezone.utc
+                    )
+                    .replace(
+                        microsecond=0
+                    )
+                    .isoformat()
+                )
+
+                status = (
+                    "running"
+                    if job[
+                        "status"
+                    ]
+                    == "running"
+                    else "watching"
+                )
+
+            else:
+
+                next_run_at = None
+
+                status = (
+                    "completed"
+                    if job[
+                        "status"
+                    ]
+                    == "watching"
+                    else job[
+                        "status"
+                    ]
+                )
+
             conn.execute(
                 """
-                UPDATE extraction_jobs SET name=?, source_account_id=?, source_ref=?,
-                    start_mode=?, start_date_utc=?, start_external_id=?, config_json=?,
-                    updated_at=CURRENT_TIMESTAMP WHERE id=?
+                UPDATE extraction_jobs SET
+                    name=?,
+                    source_account_id=?,
+                    source_ref=?,
+                    start_mode=?,
+                    start_date_utc=?,
+                    start_external_id=?,
+                    config_json=?,
+                    watch_enabled=?,
+                    poll_interval_minutes=?,
+                    next_run_at=?,
+                    status=?,
+                    scheduler_failures=0,
+                    scheduler_backoff_until=NULL,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE id=?
                 """,
-                (name, account_id, source_ref, start_mode, start_date, start_id, json_dump(config), job_id),
+                (
+                    name,
+                    account_id,
+                    source_ref,
+                    start_mode,
+                    start_date,
+                    start_id,
+                    json_dump(
+                        config
+                    ),
+                    int(
+                        watch_enabled
+                    ),
+                    poll_interval,
+                    next_run_at,
+                    status,
+                    job_id,
+                ),
             )
             conn.commit()
         log_job("extraction", job_id, "JOB_EDITED", "تنظیمات جاب استخراج ویرایش شد.")

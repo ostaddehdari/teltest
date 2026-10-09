@@ -27,7 +27,7 @@ BASE_PATH = "/teltest"
 
 VERSION = os.getenv(
     "TELTEST_VERSION",
-    "0.9.0",
+    "0.10.0",
 )
 
 ADMIN_USERNAME = os.getenv(
@@ -1057,7 +1057,7 @@ def health():
         ok=True,
         app="teltest",
         version=VERSION,
-        stage="09",
+        stage="10",
         status="ready",
         telegram_configured=bool(
             config
@@ -2190,6 +2190,17 @@ init_content_rules(
     api_post_required=api_post_required,
 )
 # TELTEST_CONTENT_RULES_END
+
+
+# TELTEST_WATCH_SCHEDULER_START
+from watch_scheduler import init_watch_scheduler
+
+init_watch_scheduler(
+    app=app,
+    login_required=login_required,
+    api_post_required=api_post_required,
+)
+# TELTEST_WATCH_SCHEDULER_END
 
 
 # TELTEST_TELEGRAM_EXTRACTOR_V2_START
