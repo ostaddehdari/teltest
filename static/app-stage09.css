@@ -1,0 +1,273 @@
+/* ==========================================================
+   TELTEST STAGE 09 — CONTENT RULES
+   ========================================================== */
+
+.content-rules-editor {
+    grid-column: 1 / -1;
+    border: 1px solid #dfe7f4;
+    border-radius: 16px;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(238, 242, 255, .75),
+            rgba(240, 249, 255, .65)
+        );
+    overflow: hidden;
+}
+
+.content-rules-editor > summary,
+.destination-rules-editor > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .85rem 1rem;
+    cursor: pointer;
+    list-style: none;
+    color: #334155;
+    font-weight: 800;
+}
+
+.content-rules-editor > summary::-webkit-details-marker,
+.destination-rules-editor > summary::-webkit-details-marker {
+    display: none;
+}
+
+.content-rules-editor > summary span,
+.destination-rules-editor > summary span {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.content-rules-editor > summary i,
+.destination-rules-editor > summary i {
+    color: #6366f1;
+}
+
+.content-rules-editor > summary small,
+.destination-rules-editor > summary small {
+    color: #94a3b8;
+    font-size: .75rem;
+    font-weight: 600;
+}
+
+.content-rules-grid,
+.destination-rules-grid,
+.modal-rules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+}
+
+.content-rules-grid {
+    padding: 0 1rem 1rem;
+}
+
+.content-rules-grid label,
+.destination-rules-grid label,
+.modal-rules-grid label {
+    display: grid;
+    gap: .38rem;
+    color: #475569;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.content-rules-grid textarea,
+.content-rules-grid input[type="text"],
+.destination-rules-grid textarea,
+.destination-rules-grid input[type="text"],
+.modal-rules-grid textarea,
+.modal-rules-grid input[type="text"] {
+    width: 100%;
+    min-height: 42px;
+    padding: .65rem .72rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 11px;
+    background: rgba(255,255,255,.95);
+    color: #172033;
+    outline: none;
+    resize: vertical;
+}
+
+.content-rules-grid textarea:focus,
+.content-rules-grid input:focus,
+.destination-rules-grid textarea:focus,
+.destination-rules-grid input:focus,
+.modal-rules-grid textarea:focus,
+.modal-rules-grid input:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+
+.rule-check {
+    display: flex !important;
+    align-items: center;
+    grid-template-columns: none !important;
+    gap: .55rem !important;
+    min-height: 42px;
+    padding: .65rem .75rem;
+    border-radius: 11px;
+    background: #fff;
+}
+
+.rule-check input {
+    width: 17px !important;
+    height: 17px;
+    min-height: 0 !important;
+    accent-color: #6366f1;
+}
+
+.full {
+    grid-column: 1 / -1;
+}
+
+.rule-help {
+    margin: 0;
+    padding: 0 1rem 1rem;
+    color: #64748b;
+    font-size: .76rem;
+    line-height: 1.8;
+}
+
+
+/* ==========================================================
+   DESTINATION RULES
+   ========================================================== */
+
+.destination-rules-host {
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.destination-rules-editor {
+    margin-top: .55rem;
+    border: 1px dashed #d8e0ed;
+    border-radius: 13px;
+    background: #f8fafc;
+}
+
+.destination-rules-grid {
+    padding: 0 .85rem .85rem;
+}
+
+
+/* ==========================================================
+   CONTENT LINKS
+   ========================================================== */
+
+.content-link-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .48rem;
+}
+
+.content-link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    max-width: 220px;
+    padding: .25rem .52rem;
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: .7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* ==========================================================
+   MODAL
+   ========================================================== */
+
+.rule-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+}
+
+.rule-modal[hidden] {
+    display: none;
+}
+
+.rule-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15,23,42,.34);
+    backdrop-filter: blur(3px);
+}
+
+.rule-modal-card {
+    position: relative;
+    z-index: 1;
+    width: min(860px, 96vw);
+    max-height: 90vh;
+    overflow: auto;
+    padding: 1rem;
+    border: 1px solid rgba(255,255,255,.8);
+    border-radius: 22px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.98),
+            rgba(248,250,252,.98)
+        );
+    box-shadow: 0 28px 80px rgba(15,23,42,.22);
+}
+
+.rule-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rule-modal-head h3 {
+    margin: .15rem 0 0;
+    font-size: 1.05rem;
+}
+
+.modal-rule-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
+@media (max-width: 720px) {
+
+    .content-rules-grid,
+    .destination-rules-grid,
+    .modal-rules-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .content-rules-grid > *,
+    .destination-rules-grid > *,
+    .modal-rules-grid > * {
+        grid-column: 1 / -1;
+    }
+
+    .rule-modal-card {
+        width: 100%;
+        max-height: 94vh;
+        border-radius: 17px;
+    }
+
+    .rule-modal-head {
+        align-items: flex-start;
+    }
+}

@@ -252,6 +252,10 @@
                 <div class="extractor-card-actions">
                     ${canRun ? `<button type="button" class="btn primary" data-run-extractor="${item.id}"><i class="fa-solid fa-play" aria-hidden="true"></i> اجرا</button>` : ""}
                     <button type="button" class="btn soft" data-show-content="${item.id}">محتوا</button>
+                    <button type="button" class="btn soft" data-stage09-rules="${item.id}">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        قوانین
+                    </button>
                 </div>
                 <div class="run-result" data-run-result="${item.id}" hidden>
                     <span>سقف اجرا: ${number(config.max_items || 250)}</span>
@@ -279,6 +283,14 @@
         const form = event.currentTarget;
         const button = document.getElementById("createExtractorJob");
         const data = Object.fromEntries(new FormData(form).entries());
+
+        if (window.teltestCollectContentRules) {
+            data.rules =
+                window.teltestCollectContentRules(
+                    "extraction"
+                );
+        }
+
         data.max_items = Number(latin(data.max_items));
         data.source_account_id = Number(latin(data.source_account_id));
         if (data.start_external_id) data.start_external_id = Number(latin(data.start_external_id));

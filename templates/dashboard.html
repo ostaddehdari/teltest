@@ -60,6 +60,11 @@
 
     <link
         rel="stylesheet"
+        href="{{ url_for('static', filename='app-stage09.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
         href="{{ url_for('static', filename='operations-center.css') }}"
     >
 
@@ -600,6 +605,123 @@
                     <label for="extractorMessageId">Message ID شروع</label>
                     <input id="extractorMessageId" name="start_external_id" type="number" min="1" inputmode="numeric" placeholder="مثلاً 12500">
                 </div>
+
+
+                <details
+                    class="content-rules-editor"
+                    id="extractionRulesEditor"
+                >
+
+                    <summary>
+                        <span>
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            تنظیمات محتوا
+                        </span>
+
+                        <small>
+                            اختیاری
+                        </small>
+                    </summary>
+
+
+                    <div class="content-rules-grid">
+
+                        <label class="rule-check full">
+                            <input
+                                id="ruleRemoveAllLinks"
+                                type="checkbox"
+                            >
+                            حذف همه لینک‌ها از متن پردازش‌شده
+                        </label>
+
+
+                        <label>
+                            حذف لینک اگر شامل
+                            <textarea
+                                id="ruleRemoveLinksContaining"
+                                rows="3"
+                                placeholder="هر عبارت در یک خط&#10;مثلاً تبلیغات&#10;t.me/example"
+                            ></textarea>
+                        </label>
+
+
+                        <label>
+                            فیلتر پیام اگر متن شامل
+                            <textarea
+                                id="ruleExcludeText"
+                                rows="3"
+                                placeholder="هر عبارت در یک خط"
+                            ></textarea>
+                        </label>
+
+
+                        <label>
+                            فیلتر پیام اگر هشتگ دارد
+                            <textarea
+                                id="ruleExcludeHashtags"
+                                rows="3"
+                                placeholder="#تبلیغ&#10;#آگهی"
+                            ></textarea>
+                        </label>
+
+
+                        <label>
+                            فیلتر پیام اگر لینک شامل
+                            <textarea
+                                id="ruleExcludeLinks"
+                                rows="3"
+                                placeholder="دامنه یا بخشی از URL"
+                            ></textarea>
+                        </label>
+
+
+                        <label>
+                            متن قبل از محتوا
+                            <textarea
+                                id="rulePrefixText"
+                                rows="2"
+                            ></textarea>
+                        </label>
+
+
+                        <label>
+                            لینک قبل از محتوا
+                            <input
+                                id="rulePrefixLink"
+                                type="text"
+                                dir="ltr"
+                                placeholder="https://..."
+                            >
+                        </label>
+
+
+                        <label>
+                            متن بعد از محتوا
+                            <textarea
+                                id="ruleSuffixText"
+                                rows="2"
+                            ></textarea>
+                        </label>
+
+
+                        <label>
+                            لینک بعد از محتوا
+                            <input
+                                id="ruleSuffixLink"
+                                type="text"
+                                dir="ltr"
+                                placeholder="https://..."
+                            >
+                        </label>
+
+                    </div>
+
+                    <p class="rule-help">
+                        متن اصلی همیشه در Raw Content حفظ می‌شود.
+                        این قوانین فقط نسخه پردازش‌شده و انتخاب برای انتقال را کنترل می‌کنند.
+                    </p>
+
+                </details>
 
                 <div class="extractor-form-actions">
                     <button type="submit" class="btn primary" id="createExtractorJob">
@@ -1551,7 +1673,7 @@
                     </span>
 
                     <code>
-                        08.2 / 16
+                        09 / 16
                     </code>
 
                 </div>
@@ -1584,6 +1706,10 @@
 
 <script
     src="{{ url_for('static', filename='stage08.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='stage09.js') }}"
 ></script>
 
 <script

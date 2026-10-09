@@ -20,6 +20,11 @@ from external_mirror import (
 )
 from job_engine import account_lock, db_connect, resolve_destination, resolve_source
 
+from content_rules import (
+    apply_content_rules,
+    normalize_rules,
+)
+
 
 BASE_PATH = "/teltest"
 TELEGRAM_BOT_API = "https://api.telegram.org"
@@ -180,6 +185,9 @@ def validate_destination_payload(data, account_get):
         "destination_ref": destination_ref,
         "mode": mode,
         "enabled": 1,
+        "rules": normalize_rules(
+            data.get("rules") or {}
+        ),
     }
 
 
@@ -275,61 +283,459 @@ async def send_external(provider, token, destination_ref, kind, text, downloaded
     raise RuntimeError("پروایدر انتقال پشتیبانی نمی‌شود.")
 
 
-async def execute_destination(client, extraction, destination, rows, mark):
-    provider = normalize_provider(destination["provider_code"])
-    tmp = TMP_ROOT / f"job-{destination['transfer_job_id']}" / f"destination-{destination['id']}"
-    tmp.mkdir(parents=True, exist_ok=True)
+async def execute_destination(
+    client,
+    extraction,
+    destination,
+    rows,
+    mark,
+):
+
+    provider = normalize_provider(
+        destination["provider_code"]
+    )
+
+    rules = normalize_rules(
+        destination.get(
+            "rules_json"
+        )
+        or destination.get(
+            "rules"
+        )
+        or {}
+    )
+
+    tmp = (
+        TMP_ROOT
+        / f"job-{destination['transfer_job_id']}"
+        / f"destination-{destination['id']}"
+    )
+
+    tmp.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+
     await client.connect()
+
+
     try:
+
         if not await client.is_user_authorized():
-            raise RuntimeError("Session تلگرام اکانت مبدا مجاز نیست.")
-        source, _joined = await resolve_source(client, extraction["source_ref"])
+
+            raise RuntimeError(
+                "Session تلگرام اکانت مبدا مجاز نیست."
+            )
+
+
+        source, _joined = await resolve_source(
+            client,
+            extraction[
+                "source_ref"
+            ],
+        )
+
+
         telegram_destination = None
+
+
         if provider == "telegram_user":
-            telegram_destination = await resolve_destination(client, destination["destination_ref"])
-        token = provider_token(provider)
-        ids = [int(row["external_id"]) for row in rows if str(row["external_id"]).isdigit()]
-        messages = await client.get_messages(source, ids=ids) if ids else []
-        if not isinstance(messages, (list, tuple)):
-            messages = [messages]
-        by_id = {int(item.id): item for item in messages if item and getattr(item, "id", None)}
+
+            telegram_destination = await resolve_destination(
+                client,
+                destination[
+                    "destination_ref"
+                ],
+            )
+
+
+        token = provider_token(
+            provider
+        )
+
+
+        ids = [
+            int(
+                row[
+                    "external_id"
+                ]
+            )
+            for row in rows
+            if str(
+                row[
+                    "external_id"
+                ]
+            ).isdigit()
+        ]
+
+
+        messages = (
+            await client.get_messages(
+                source,
+                ids=ids,
+            )
+            if ids
+            else []
+        )
+
+
+        if not isinstance(
+            messages,
+            (list, tuple),
+        ):
+
+            messages = [
+                messages
+            ]
+
+
+        by_id = {
+            int(
+                item.id
+            ):
+                item
+
+            for item in messages
+
+            if (
+                item
+                and getattr(
+                    item,
+                    "id",
+                    None,
+                )
+            )
+        }
+
 
         for row in rows:
-            item_id = row["transfer_item_id"]
-            message_id = int(row["external_id"]) if str(row["external_id"]).isdigit() else None
-            message = by_id.get(message_id) if message_id else None
+
+            item_id = row[
+                "transfer_item_id"
+            ]
+
+
+            message_id = (
+                int(
+                    row[
+                        "external_id"
+                    ]
+                )
+                if str(
+                    row[
+                        "external_id"
+                    ]
+                ).isdigit()
+                else None
+            )
+
+
+            message = (
+                by_id.get(
+                    message_id
+                )
+                if message_id
+                else None
+            )
+
+
             if message is None:
-                mark(item_id, "skipped", error="پیام اصلی در منبع پیدا نشد.")
+
+                mark(
+                    item_id,
+                    "skipped",
+                    error=(
+                        "پیام اصلی در منبع پیدا نشد."
+                    ),
+                )
+
                 continue
-            mark(item_id, "transferring")
+
+
+            base_text = str(
+                row.get(
+                    "processed_text"
+                )
+                or row.get(
+                    "raw_text"
+                )
+                or getattr(
+                    message,
+                    "message",
+                    None,
+                )
+                or ""
+            )
+
+
+            evaluation = apply_content_rules(
+                base_text,
+                rules,
+            )
+
+
+            if evaluation[
+                "excluded"
+            ]:
+
+                mark(
+                    item_id,
+                    "skipped",
+                    error=(
+                        "Destination Rule: "
+                        + str(
+                            evaluation[
+                                "reason"
+                            ]
+                            or "excluded"
+                        )
+                    ),
+                )
+
+                continue
+
+
+            text = evaluation[
+                "processed_text"
+            ]
+
+
+            mark(
+                item_id,
+                "transferring",
+            )
+
+
             try:
+
                 if provider == "telegram_user":
-                    if destination["mode"] == "forward":
-                        sent = await client.forward_messages(telegram_destination, message, from_peer=source)
+
+                    #
+                    # Forward باید ماهیت Forward واقعی را حفظ کند.
+                    # بنابراین تغییر متن فقط برای Copy اعمال می‌شود.
+                    #
+                    if destination[
+                        "mode"
+                    ] == "forward":
+
+                        sent = await client.forward_messages(
+                            telegram_destination,
+                            message,
+                            from_peer=source,
+                        )
+
+
                     else:
-                        sent = await client.send_message(telegram_destination, message)
-                    if isinstance(sent, (list, tuple)):
-                        sent = sent[0] if sent else None
-                    external_id = getattr(sent, "id", None)
-                else:
-                    kind = str(row.get("content_type") or "text")
-                    text = str(row.get("processed_text") or row.get("raw_text") or "")
-                    downloaded = None
-                    if kind != "text" or getattr(message, "media", None):
-                        downloaded = await client.download_media(message, file=str(tmp))
-                    if not downloaded and not text:
-                        mark(item_id, "skipped", error="متن یا رسانه قابل ارسال وجود ندارد.")
-                        continue
-                    sent = await send_external(
-                        provider, token, destination["destination_ref"], kind, text, downloaded
+
+                        original_text = str(
+                            getattr(
+                                message,
+                                "message",
+                                None,
+                            )
+                            or ""
+                        )
+
+
+                        has_media = bool(
+                            getattr(
+                                message,
+                                "media",
+                                None,
+                            )
+                        )
+
+
+                        if (
+                            has_media
+                            and text == original_text
+                        ):
+
+                            #
+                            # مسیر سبک؛ اگر Rule متن را تغییر نداده،
+                            # Telegram همان Message را Copy می‌کند.
+                            #
+                            sent = await client.send_message(
+                                telegram_destination,
+                                message,
+                            )
+
+
+                        elif has_media:
+
+                            downloaded = await client.download_media(
+                                message,
+                                file=str(
+                                    tmp
+                                ),
+                            )
+
+
+                            if downloaded:
+
+                                sent = await client.send_file(
+                                    telegram_destination,
+                                    downloaded,
+                                    caption=(
+                                        text
+                                        or None
+                                    ),
+                                )
+
+
+                            elif text:
+
+                                sent = await client.send_message(
+                                    telegram_destination,
+                                    text,
+                                )
+
+
+                            else:
+
+                                mark(
+                                    item_id,
+                                    "skipped",
+                                    error=(
+                                        "متن یا رسانه قابل ارسال وجود ندارد."
+                                    ),
+                                )
+
+                                continue
+
+
+                        else:
+
+                            if not text:
+
+                                mark(
+                                    item_id,
+                                    "skipped",
+                                    error=(
+                                        "متن قابل ارسال وجود ندارد."
+                                    ),
+                                )
+
+                                continue
+
+
+                            sent = await client.send_message(
+                                telegram_destination,
+                                text,
+                            )
+
+
+                    if isinstance(
+                        sent,
+                        (list, tuple),
+                    ):
+
+                        sent = (
+                            sent[0]
+                            if sent
+                            else None
+                        )
+
+
+                    external_id = getattr(
+                        sent,
+                        "id",
+                        None,
                     )
-                    external_id = result_message_id(sent)
-                mark(item_id, "transferred", destination_external_id=external_id)
+
+
+                else:
+
+                    kind = str(
+                        row.get(
+                            "content_type"
+                        )
+                        or "text"
+                    )
+
+
+                    downloaded = None
+
+
+                    if (
+                        kind != "text"
+                        or getattr(
+                            message,
+                            "media",
+                            None,
+                        )
+                    ):
+
+                        downloaded = await client.download_media(
+                            message,
+                            file=str(
+                                tmp
+                            ),
+                        )
+
+
+                    if (
+                        not downloaded
+                        and not text
+                    ):
+
+                        mark(
+                            item_id,
+                            "skipped",
+                            error=(
+                                "متن یا رسانه قابل ارسال وجود ندارد."
+                            ),
+                        )
+
+                        continue
+
+
+                    sent = await send_external(
+                        provider,
+                        token,
+                        destination[
+                            "destination_ref"
+                        ],
+                        kind,
+                        text,
+                        downloaded,
+                    )
+
+
+                    external_id = result_message_id(
+                        sent
+                    )
+
+
+                mark(
+                    item_id,
+                    "transferred",
+                    destination_external_id=
+                        external_id,
+                )
+
+
             except Exception as exc:
-                mark(item_id, "failed", error=f"{type(exc).__name__}: {exc}")
+
+                mark(
+                    item_id,
+                    "failed",
+                    error=(
+                        f"{type(exc).__name__}: "
+                        f"{exc}"
+                    ),
+                )
+
+
     finally:
+
         await client.disconnect()
-        shutil.rmtree(tmp, ignore_errors=True)
+
+        shutil.rmtree(
+            tmp,
+            ignore_errors=True,
+        )
 
 
 def run_destination(telegram_client, account, extraction, destination, rows, mark):

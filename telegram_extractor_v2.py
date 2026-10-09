@@ -22,6 +22,13 @@ from job_engine import (
     run_async,
 )
 
+from content_rules import (
+    apply_content_rules,
+    normalize_rules,
+    rules_digest,
+    sync_content_index,
+)
+
 
 BASE_PATH = "/teltest"
 EXTRACTOR_VERSION = "2"
@@ -194,6 +201,7 @@ def init_extractor_schema():
                 fetched_count INTEGER NOT NULL DEFAULT 0,
                 inserted_count INTEGER NOT NULL DEFAULT 0,
                 updated_count INTEGER NOT NULL DEFAULT 0,
+                skipped_count INTEGER NOT NULL DEFAULT 0,
                 elapsed_seconds REAL,
                 error_text TEXT,
                 started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -207,6 +215,22 @@ def init_extractor_schema():
                 ON extraction_runs(extraction_job_id, id DESC);
             """
         )
+        run_columns = {
+            row["name"]
+            for row in conn.execute(
+                "PRAGMA table_info(extraction_runs)"
+            ).fetchall()
+        }
+
+        if "skipped_count" not in run_columns:
+            conn.execute(
+                """
+                ALTER TABLE extraction_runs
+                ADD COLUMN skipped_count
+                INTEGER NOT NULL DEFAULT 0
+                """
+            )
+
         conn.execute(
             """
             INSERT INTO schema_meta (key, value, updated_at)
@@ -351,7 +375,29 @@ def persist_messages(job_id, result, elapsed):
         if not job:
             raise RuntimeError("جاب استخراج هنگام ذخیره پیدا نشد.")
 
+        rules = normalize_rules(
+            json_load(
+                job["rules_json"],
+                {},
+            )
+        )
+
+        digest = rules_digest(
+            rules
+        )
+
+        skipped = 0
+
         for item in messages:
+
+            evaluation = apply_content_rules(
+                item["raw_text"],
+                rules,
+            )
+
+            if evaluation["excluded"]:
+                skipped += 1
+
             current = conn.execute(
                 """
                 SELECT id FROM content_items
@@ -402,7 +448,7 @@ def persist_messages(job_id, result, elapsed):
                     item["published_at"],
                     item["content_type"],
                     item["raw_text"],
-                    item["raw_text"],
+                    evaluation["processed_text"],
                     json_dump(item["media"]),
                     json_dump(item["metadata"]),
                     content_hash,
@@ -418,13 +464,50 @@ def persist_messages(job_id, result, elapsed):
             ).fetchone()["id"]
             conn.execute(
                 """
-                INSERT OR IGNORE INTO extraction_job_items
-                    (extraction_job_id, content_id)
-                VALUES (?, ?)
+                INSERT INTO extraction_job_items (
+                    extraction_job_id,
+                    content_id,
+                    processed_text,
+                    excluded,
+                    rule_reason,
+                    rules_hash,
+                    processed_at
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?,
+                    CURRENT_TIMESTAMP
+                )
+                ON CONFLICT(
+                    extraction_job_id,
+                    content_id
+                )
+                DO UPDATE SET
+                    processed_text =
+                        excluded.processed_text,
+                    excluded =
+                        excluded.excluded,
+                    rule_reason =
+                        excluded.rule_reason,
+                    rules_hash =
+                        excluded.rules_hash,
+                    processed_at =
+                        CURRENT_TIMESTAMP
                 """,
-                (job_id, content_id),
+                (
+                    job_id,
+                    content_id,
+                    evaluation["processed_text"],
+                    int(evaluation["excluded"]),
+                    evaluation["reason"],
+                    digest,
+                ),
             )
-            sync_content_hashtags(conn, content_id, item["raw_text"])
+
+            sync_content_index(
+                conn,
+                content_id,
+                item["raw_text"],
+            )
             if current:
                 updated += 1
             else:
@@ -463,6 +546,7 @@ def persist_messages(job_id, result, elapsed):
             UPDATE extraction_runs SET
                 status = 'completed', resolved_source_key = ?,
                 fetched_count = ?, inserted_count = ?, updated_count = ?,
+                skipped_count = ?,
                 elapsed_seconds = ?, finished_at = CURRENT_TIMESTAMP
             WHERE id = (
                 SELECT id FROM extraction_runs
@@ -470,11 +554,19 @@ def persist_messages(job_id, result, elapsed):
                 ORDER BY id DESC LIMIT 1
             )
             """,
-            (source_key, len(messages), inserted, updated, elapsed, job_id),
+            (
+                source_key,
+                len(messages),
+                inserted,
+                updated,
+                skipped,
+                elapsed,
+                job_id,
+            ),
         )
         conn.commit()
 
-    return inserted, updated
+    return inserted, updated, skipped
 
 
 def init_telegram_extractor_v2(
@@ -551,6 +643,10 @@ def init_telegram_extractor_v2(
         except (TypeError, ValueError) as exc:
             return jsonify(ok=False, error=str(exc) or "مقدار شروع معتبر نیست."), 400
 
+        rules = normalize_rules(
+            data.get("rules") or {}
+        )
+
         config = {
             "extractor": "telegram-v2",
             "max_items": max_items,
@@ -564,7 +660,7 @@ def init_telegram_extractor_v2(
                     status, start_mode, start_date_utc, start_external_id,
                     watch_enabled, poll_interval_minutes, config_json, rules_json,
                     created_at, updated_at
-                ) VALUES (?, 'telegram', ?, ?, 'draft', ?, ?, ?, 0, 5, ?, '{}',
+                ) VALUES (?, 'telegram', ?, ?, 'draft', ?, ?, ?, 0, 5, ?, ?,
                           CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """,
                 (
@@ -575,6 +671,7 @@ def init_telegram_extractor_v2(
                     start_date_utc,
                     start_external_id,
                     json_dump(config),
+                    json_dump(rules),
                 ),
             )
             conn.commit()
@@ -653,11 +750,20 @@ def init_telegram_extractor_v2(
                     )
                 )
             elapsed = round(time.perf_counter() - started, 3)
-            inserted, updated = persist_messages(job_id, result, elapsed)
+            inserted, updated, skipped = persist_messages(
+                job_id,
+                result,
+                elapsed,
+            )
             write_operation_log(
                 job_id,
                 "RUN_FINISHED",
-                f"{len(result['messages'])} دریافت؛ {inserted} جدید؛ {updated} بروزرسانی.",
+                (
+                    f"{len(result['messages'])} دریافت؛ "
+                    f"{inserted} جدید؛ "
+                    f"{updated} بروزرسانی؛ "
+                    f"{skipped} فیلتر."
+                ),
             )
             return jsonify(
                 ok=True,
@@ -671,6 +777,7 @@ def init_telegram_extractor_v2(
                 fetched=len(result["messages"]),
                 inserted=inserted,
                 updated=updated,
+                skipped=skipped,
                 cursor=max(
                     [
                         int(item["external_id"])

@@ -206,9 +206,29 @@ def hashtag_rows(conn, content_id):
     ]
 
 
+def link_rows(conn, content_id):
+    return [
+        {
+            "url": row["url"],
+            "domain": row["domain"],
+            "link_text": row["link_text"],
+        }
+        for row in conn.execute(
+            """
+            SELECT url, domain, link_text
+            FROM content_links
+            WHERE content_id = ?
+            ORDER BY id
+            """,
+            (content_id,),
+        ).fetchall()
+    ]
+
+
 def content_payload(conn, row, transfer_status=None):
     item = dict(row)
     item["hashtags"] = hashtag_rows(conn, item["id"])
+    item["links"] = link_rows(conn, item["id"])
     item["media"] = json_load(item.pop("media_json", "[]"), [])
     item["metadata"] = json_load(item.pop("metadata_json", "{}"), {})
     item["original_url"] = public_post_url(
@@ -266,7 +286,13 @@ def sync_transfer_plan(conn, transfer_job_id):
         (transfer_job_id,),
     ).fetchall()
     contents = conn.execute(
-        "SELECT content_id FROM extraction_job_items WHERE extraction_job_id = ?",
+        """
+        SELECT content_id
+        FROM extraction_job_items
+        WHERE
+            extraction_job_id = ?
+            AND COALESCE(excluded, 0) = 0
+        """,
         (extraction_job_id,),
     ).fetchall()
     for destination in destinations:
@@ -317,6 +343,10 @@ def destination_payloads(conn, job_id):
     items = []
     for row in rows:
         item = dict(row)
+        item["rules"] = json_load(
+            item.pop("rules_json", "{}"),
+            {},
+        )
         code = normalize_provider(item["provider_code"])
         item["provider_code"] = code
         item["provider_label"] = PROVIDERS.get(code, {}).get("short_label", code)
@@ -340,8 +370,9 @@ def insert_destinations(conn, job_id, destinations):
             """
             INSERT INTO transfer_destinations(
                 transfer_job_id, provider_code, provider_account_id,
-                destination_ref, mode, enabled, position, status
-            ) VALUES(?, ?, ?, ?, ?, 1, ?, 'pending')
+                destination_ref, mode, enabled, position,
+                rules_json, status
+            ) VALUES(?, ?, ?, ?, ?, 1, ?, ?, 'pending')
             """,
             (
                 job_id,
@@ -350,6 +381,12 @@ def insert_destinations(conn, job_id, destinations):
                 destination["destination_ref"],
                 destination["mode"],
                 index * 10,
+                json_dump(
+                    destination.get(
+                        "rules",
+                        {},
+                    )
+                ),
             ),
         )
         ids.append(cursor.lastrowid)
@@ -452,7 +489,8 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
                 f"""
                 SELECT ci.id, ci.connector_code, ci.source_key, ci.source_ref,
                        ci.source_title, ci.external_id, ci.published_at,
-                       ci.content_type, ci.raw_text, ci.media_json, ci.metadata_json,
+                       ci.content_type, ci.raw_text, ci.processed_text,
+                       ci.media_json, ci.metadata_json,
                        ci.created_at, ci.updated_at
                 FROM content_items ci {join} {clause}
                 ORDER BY ci.id DESC LIMIT 250
@@ -569,7 +607,8 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
                 """
                 SELECT ci.id, ci.connector_code, ci.source_key, ci.source_ref,
                        ci.source_title, ci.external_id, ci.published_at,
-                       ci.content_type, ci.raw_text, ci.media_json, ci.metadata_json,
+                       ci.content_type, ci.raw_text, ci.processed_text,
+                       ci.media_json, ci.metadata_json,
                        ci.created_at, ci.updated_at
                 FROM extraction_job_items eji
                 INNER JOIN content_items ci ON ci.id=eji.content_id

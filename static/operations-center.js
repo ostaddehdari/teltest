@@ -85,6 +85,17 @@
             : "";
     }
 
+    function linksHtml(links) {
+        return (links || []).length
+            ? `<div class="content-link-list">${links.map((item) => `
+                <span class="content-link-chip" title="${esc(item.url)}">
+                    <i class="fa-solid fa-link"></i>
+                    ${esc(item.domain || item.url)}
+                </span>
+            `).join("")}</div>`
+            : "";
+    }
+
     function contentRow(item, showTransfer = false) {
         const original = item.original_url
             ? `<a class="btn soft" href="${esc(item.original_url)}" target="_blank" rel="noopener">پست اصلی</a>`
@@ -95,6 +106,11 @@
         const destination = showTransfer
             ? `<span class="badge">${esc(item.provider_label || item.provider_code || "مقصد")} · ${esc(item.destination_ref || "—")}</span>`
             : "";
+        const bodyText =
+            item.processed_text !== undefined
+                && item.processed_text !== null
+                ? item.processed_text
+                : item.raw_text;
         return `
             <article class="content-row">
                 <div class="content-row-main">
@@ -106,8 +122,9 @@
                         ${state}
                         ${destination}
                     </div>
-                    <p class="content-row-text">${esc(clip(item.raw_text) || `[${item.content_type || "محتوا"}]`)}</p>
+                    <p class="content-row-text">${esc(clip(bodyText) || `[${item.content_type || "محتوا"}]`)}</p>
                     ${hashtagsHtml(item.hashtags)}
+                    ${linksHtml(item.links)}
                     ${item.last_error ? `<small class="text-danger">${esc(item.last_error)}</small>` : ""}
                 </div>
                 <div class="content-row-actions">
@@ -200,6 +217,13 @@
         container.insertAdjacentHTML("beforeend", destinationRowHtml(value));
         const row = container.lastElementChild;
         configureDestinationRow(row, value.mode || "copy");
+
+        if (window.teltestHydrateDestinationRules) {
+            window.teltestHydrateDestinationRules(
+                row,
+                value.rules || {}
+            );
+        }
     }
 
     function hydrateDestinationRows(container, values = []) {
@@ -220,6 +244,10 @@
                     : null,
                 destination_ref: row.querySelector("[data-destination-ref]").value.trim(),
                 mode: row.querySelector("[data-destination-mode]").value,
+                rules:
+                    window.teltestReadDestinationRules
+                        ? window.teltestReadDestinationRules(row)
+                        : {},
             };
         });
     }
@@ -249,6 +277,10 @@
                 <div class="operations-job-actions">
                     <button class="btn soft" data-op-view-extraction="${item.id}"><i class="fa-regular fa-eye"></i> مشاهده</button>
                     <button class="btn secondary" data-op-edit-extraction="${item.id}"><i class="fa-regular fa-pen-to-square"></i> ویرایش</button>
+                    <button class="btn soft" data-op-rules-extraction="${item.id}">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        قوانین
+                    </button>
                     <button class="btn secondary" data-op-repeat-extraction="${item.id}"><i class="fa-solid fa-copy"></i> تکرار</button>
                     <button class="btn primary" data-op-run-extraction="${item.id}"><i class="fa-solid fa-play"></i> اجرا</button>
                 </div>
