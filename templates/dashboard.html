@@ -70,6 +70,11 @@
 
     <link
         rel="stylesheet"
+        href="{{ url_for('static', filename='app-stage11.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
         href="{{ url_for('static', filename='operations-center.css') }}"
     >
 
@@ -956,36 +961,305 @@
 
 
     <!-- ================================================== -->
-    <!-- POSTS -->
+    <!-- CONTENT LIBRARY V2 -->
     <!-- ================================================== -->
 
     <section
         class="panel"
         data-panel-content="posts"
     >
+
         <div class="section-heading">
+
             <div>
-                <span class="eyebrow">CONTENT LIBRARY</span>
-                <h2>کتابخانه پست‌ها</h2>
-                <p>متن، رسانه، لینک پست اصلی، دانلود و هشتگ‌ها در یک نما.</p>
+                <span class="eyebrow">
+                    CONTENT LIBRARY V2
+                </span>
+
+                <h2>
+                    کتابخانه محتوا
+                </h2>
+
+                <p>
+                    جستجوی سریع، فیلتر ترکیبی،
+                    هشتگ، منبع، تاریخ و رسانه.
+                </p>
             </div>
+
+
             <div class="section-actions">
-                <input id="contentSearch" class="text-input" type="search" placeholder="جستجو در متن یا منبع">
-                <button type="button" class="btn secondary" id="reloadContentLibrary">
-                    <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+
+                <button
+                    type="button"
+                    class="btn secondary"
+                    id="reloadContentLibrary"
+                >
+                    <i class="fa-solid fa-rotate"></i>
                     بروزرسانی
                 </button>
+
+            </div>
+
+        </div>
+
+
+        <article class="surface content-search-surface">
+
+            <div class="content-search-main">
+
+                <div class="content-search-input-wrap">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        id="contentSearch"
+                        type="search"
+                        placeholder="جستجو در متن، عنوان منبع یا شناسه پیام..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="btn primary"
+                    id="applyContentFilters"
+                >
+                    جستجو
+                </button>
+
+
+                <button
+                    type="button"
+                    class="btn ghost"
+                    id="resetContentFilters"
+                >
+                    پاک کردن فیلترها
+                </button>
+
+            </div>
+
+
+            <div class="content-filter-grid">
+
+                <label>
+                    شبکه / Connector
+
+                    <select id="contentConnectorFilter">
+                        <option value="">همه منابع</option>
+                    </select>
+                </label>
+
+
+                <label>
+                    منبع
+
+                    <select id="contentSourceFilter">
+                        <option value="">همه منابع</option>
+                    </select>
+                </label>
+
+
+                <label>
+                    هشتگ
+
+                    <input
+                        id="contentHashtagFilter"
+                        type="text"
+                        list="contentHashtagOptions"
+                        placeholder="#هشتگ"
+                    >
+
+                    <datalist id="contentHashtagOptions"></datalist>
+                </label>
+
+
+                <label>
+                    نوع محتوا
+
+                    <select id="contentTypeFilter">
+                        <option value="">همه انواع</option>
+                    </select>
+                </label>
+
+
+                <label>
+                    رسانه
+
+                    <select id="contentMediaFilter">
+                        <option value="">همه</option>
+                        <option value="yes">فقط رسانه‌دار</option>
+                        <option value="no">فقط متن</option>
+                    </select>
+                </label>
+
+
+                <label>
+                    لینک
+
+                    <select id="contentLinkFilter">
+                        <option value="">همه</option>
+                        <option value="yes">دارای لینک</option>
+                        <option value="no">بدون لینک</option>
+                    </select>
+                </label>
+
+
+                <label>
+                    از تاریخ شمسی
+
+                    <input
+                        id="contentFromDate"
+                        type="text"
+                        inputmode="numeric"
+                        placeholder="۱۴۰۵/۰۷/۰۱"
+                    >
+                </label>
+
+
+                <label>
+                    تا تاریخ شمسی
+
+                    <input
+                        id="contentToDate"
+                        type="text"
+                        inputmode="numeric"
+                        placeholder="۱۴۰۵/۰۷/۳۰"
+                    >
+                </label>
+
+
+                <label>
+                    مرتب‌سازی
+
+                    <select id="contentSort">
+                        <option value="newest">جدیدترین</option>
+                        <option value="oldest">قدیمی‌ترین</option>
+                        <option value="relevance">مرتبط‌ترین</option>
+                    </select>
+                </label>
+
+
+                <label>
+                    تعداد در صفحه
+
+                    <select id="contentPageSize">
+                        <option value="12">۱۲</option>
+                        <option value="24" selected>۲۴</option>
+                        <option value="48">۴۸</option>
+                        <option value="96">۹۶</option>
+                    </select>
+                </label>
+
+            </div>
+
+
+            <details class="saved-search-create">
+
+                <summary>
+                    <i class="fa-regular fa-bookmark"></i>
+                    ذخیره فیلتر فعلی
+                </summary>
+
+                <div>
+
+                    <input
+                        id="savedSearchName"
+                        type="text"
+                        maxlength="100"
+                        placeholder="مثلاً اخبار قم"
+                    >
+
+                    <button
+                        type="button"
+                        class="btn secondary"
+                        id="saveCurrentSearch"
+                    >
+                        ذخیره
+                    </button>
+
+                </div>
+
+            </details>
+
+        </article>
+
+
+        <div
+            class="saved-searches-bar"
+            id="savedSearchesBar"
+        ></div>
+
+
+        <div class="content-library-stats">
+
+            <article>
+                <span>کل آرشیو</span>
+                <strong id="contentLibraryTotal">۰</strong>
+            </article>
+
+            <article>
+                <span>نتیجه فیلتر</span>
+                <strong id="contentLibraryCount">۰</strong>
+            </article>
+
+            <article>
+                <span>منابع</span>
+                <strong id="contentSourceCount">۰</strong>
+            </article>
+
+            <article>
+                <span>هشتگ‌ها</span>
+                <strong id="contentHashtagCount">۰</strong>
+            </article>
+
+            <article>
+                <span>صفحه</span>
+                <strong id="contentPageIndicator">۱ / ۱</strong>
+            </article>
+
+        </div>
+
+
+        <div
+            id="contentLibraryList"
+            class="content-library-list"
+        >
+            <div class="loading-box">
+                در حال دریافت محتوا...
             </div>
         </div>
 
-        <div class="content-library-stats">
-            <article><span>کل نمایش</span><strong id="contentLibraryCount">۰</strong></article>
-            <article><span>دارای هشتگ</span><strong id="contentHashtagCount">۰</strong></article>
-            <article><span>رسانه</span><strong id="contentMediaCount">۰</strong></article>
-        </div>
 
-        <div id="contentLibraryList" class="content-library-list">
-            <div class="loading-box">در حال دریافت محتوا...</div>
+        <div class="content-pagination">
+
+            <button
+                type="button"
+                class="btn secondary"
+                id="contentPreviousPage"
+                disabled
+            >
+                <i class="fa-solid fa-chevron-right"></i>
+                قبلی
+            </button>
+
+
+            <span id="contentPaginationText">
+                صفحه ۱ از ۱
+            </span>
+
+
+            <button
+                type="button"
+                class="btn secondary"
+                id="contentNextPage"
+                disabled
+            >
+                بعدی
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+
         </div>
 
     </section>
@@ -1738,7 +2012,7 @@
                     </span>
 
                     <code>
-                        10 / 16
+                        11 / 16
                     </code>
 
                 </div>
@@ -1775,6 +2049,10 @@
 
 <script
     src="{{ url_for('static', filename='stage09.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='stage11.js') }}"
 ></script>
 
 <script

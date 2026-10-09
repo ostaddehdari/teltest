@@ -548,6 +548,13 @@
     }
 
     async function loadContentLibrary() {
+
+        if (
+            window.teltestStage11LoadLibrary
+        ) {
+            return window.teltestStage11LoadLibrary();
+        }
+
         const box = document.getElementById("contentLibraryList");
         if (!box) return;
         const query = document.getElementById("contentSearch")?.value.trim() || "";
