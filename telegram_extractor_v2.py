@@ -718,6 +718,9 @@ def init_telegram_extractor_v2(
     @api_post_required
     def create_extraction_job():
         data = json_body()
+        if str(data.get("connector_code") or "telegram").lower() == "eitaa":
+            from eitaa_source import create_eitaa_job
+            return create_eitaa_job(data)
         try:
             account_id = int(data.get("source_account_id"))
         except (TypeError, ValueError):
@@ -873,6 +876,9 @@ def init_telegram_extractor_v2(
             return jsonify(ok=False, error="در Stage 08 فقط تلگرام قابل اجرا است."), 400
         if job["status"] == "running":
             return jsonify(ok=False, error="این جاب هم‌اکنون در حال اجرا است."), 409
+        if job["connector_code"] == "eitaa":
+            from eitaa_source import run_eitaa_response
+            return run_eitaa_response(job_id)
         account = account_get(job["source_account_id"])
         if not account or account["status"] != "connected":
             return jsonify(ok=False, error="اکانت متصل جاب در دسترس نیست."), 400
