@@ -535,6 +535,14 @@ CONNECTORS = [
     },
 
     {
+        "code": "eitaa", "name": "Eitaa", "position": 15,
+        "enabled": 1, "selectable": 1,
+        "capabilities": {"text": True, "media": True, "incremental": True,
+                         "date_cursor": True, "external_id_cursor": True,
+                         "watch": True, "public_sources": True},
+    },
+
+    {
         "code":
             "instagram",
 
@@ -710,7 +718,7 @@ def seed_connectors():
                 selectable = 0,
                 updated_at =
                     CURRENT_TIMESTAMP
-            WHERE code <> 'telegram'
+            WHERE code NOT IN ('telegram', 'eitaa')
             """
         )
 

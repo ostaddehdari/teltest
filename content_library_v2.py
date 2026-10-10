@@ -197,6 +197,10 @@ def public_post_url(
     source = str(
         source_ref or ""
     ).strip()
+    if source.startswith("https://eitaa.com/"):
+        channel = source.split("eitaa.com/", 1)[1].strip("/").split("/")[0]
+        if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{3,63}", channel) and str(external_id or "").isdigit():
+            return f"https://eitaa.com/{channel}/{external_id}"
 
     message_id = str(
         external_id or ""

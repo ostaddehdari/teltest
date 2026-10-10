@@ -548,7 +548,7 @@
             </div>
 
             <div class="section-actions">
-                <span class="badge success">Telegram Extractor V2</span>
+                <span class="badge success">Telegram + Eitaa</span>
                 <button type="button" class="btn primary" id="openExtractorBuilder">
                     <i class="fa-solid fa-plus" aria-hidden="true"></i>
                     استخراج جدید
@@ -559,7 +559,7 @@
         <article class="surface extractor-builder" id="extractorBuilder" hidden>
             <div class="surface-head">
                 <div>
-                    <h2>ساخت جاب استخراج تلگرام</h2>
+                    <h2>ساخت جاب استخراج تلگرام یا ایتا</h2>
                     <p>منبع را با Username، لینک یا Source ID انتخاب کنید.</p>
                 </div>
                 <button type="button" class="btn ghost" id="closeExtractorBuilder">
@@ -574,6 +574,11 @@
                     <input id="extractorName" name="name" type="text" maxlength="255" placeholder="مثلاً اخبار روزانه">
                 </div>
 
+                <div class="form-field"><label for="extractorConnector">شبکه مبدا</label>
+                    <select id="extractorConnector" name="connector_code">
+                        <option value="telegram">تلگرام</option>
+                        <option value="eitaa">ایتا — کانال عمومی</option>
+                    </select></div>
                 <div class="form-field">
                     <label for="extractorAccount">اکانت تلگرام</label>
                     <select id="extractorAccount" name="source_account_id" required>

@@ -229,6 +229,20 @@
         document.getElementById("extractorMessageId")?.toggleAttribute("required", mode === "message_id");
     }
 
+    function updateConnectorFields() {
+        const kind = document.getElementById("extractorConnector")?.value || "telegram";
+        const account = document.getElementById("extractorAccount");
+        if (account) {
+            account.required = kind === "telegram";
+            account.disabled = kind === "eitaa";
+            account.closest(".form-field").hidden = kind === "eitaa";
+        }
+        const source = document.getElementById("extractorSource");
+        if (source) source.placeholder = kind === "eitaa" ? "@channel یا https://eitaa.com/channel" : "@channel یا -1001234567890";
+    }
+    document.getElementById("extractorConnector")?.addEventListener("change", updateConnectorFields);
+    updateConnectorFields();
+
     async function loadMeta() {
         const select = document.getElementById("extractorAccount");
         if (!select) return;
@@ -258,7 +272,7 @@
     function jobCard(item) {
         const state = String(item.status || "draft");
         const config = item.config || {};
-        const canRun = item.connector_code === "telegram" && item.source_account_id;
+        const canRun = item.connector_code === "eitaa" || (item.connector_code === "telegram" && item.source_account_id);
         return `
             <article class="v2-job-card extractor-v2-card" data-extractor-job="${item.id}">
                 <div class="v2-job-title">
@@ -330,7 +344,7 @@
         }
 
         data.max_items = Number(latin(data.max_items));
-        data.source_account_id = Number(latin(data.source_account_id));
+        data.source_account_id = data.connector_code === "eitaa" ? null : Number(latin(data.source_account_id));
         if (data.start_external_id) data.start_external_id = Number(latin(data.start_external_id));
         if (button) {
             button.disabled = true;
@@ -343,6 +357,7 @@
             });
             notify(`${result.message} شماره ${number(result.job_id)}`);
             form.reset();
+            updateConnectorFields();
 
             document.getElementById(
                 "extractorLimit"
