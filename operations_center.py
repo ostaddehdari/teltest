@@ -1240,7 +1240,7 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
                 rows = conn.execute(
                     """
                     SELECT tji.id AS transfer_item_id, ci.external_id,
-                           ci.content_type, ci.raw_text, ci.processed_text
+                           ci.content_type, ci.raw_text, ci.processed_text, ci.media_json
                     FROM transfer_job_items tji
                     INNER JOIN content_items ci ON ci.id=tji.content_id
                     WHERE tji.transfer_job_id=? AND tji.destination_id=?
@@ -1282,7 +1282,7 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
                 failure = "پروایدر مقصد ناشناخته است."
             elif provider != "telegram_user" and not provider_is_configured(provider):
                 failure = f"توکن {label} تنظیم نشده است."
-            elif not account or account["status"] != "connected":
+            elif extraction["connector_code"] == "telegram" and (not account or account["status"] != "connected"):
                 failure = "اکانت تلگرام متصل برای خواندن محتوای مبدا در دسترس نیست."
 
             try:
