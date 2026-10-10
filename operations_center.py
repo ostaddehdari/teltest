@@ -640,8 +640,13 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
                 return jsonify(ok=False, error="جاب استخراج پیدا نشد."), 404
             name = str(data.get("name") or job["name"]).strip()[:255]
             try:
-                source_ref = clean_ref(data.get("source_ref") or job["source_ref"])
-                account_id = int(data.get("source_account_id") or job["source_account_id"])
+                if job["connector_code"] == "eitaa":
+                    from eitaa_source import clean_channel
+                    source_ref = "https://eitaa.com/" + clean_channel(data.get("source_ref") or job["source_ref"])
+                    account_id = None
+                else:
+                    source_ref = clean_ref(data.get("source_ref") or job["source_ref"])
+                    account_id = int(data.get("source_account_id") or job["source_account_id"])
                 max_items = int(data.get("max_items") or json_load(job["config_json"], {}).get("max_items", 250))
                 if not 1 <= max_items <= 5000:
                     raise ValueError("حداکثر پیام باید بین ۱ تا ۵۰۰۰ باشد.")
@@ -821,7 +826,9 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
                     f"{job['name']} — تکرار", job["connector_code"], job["source_account_id"],
                     job["source_ref"], job["source_key"], job["source_title"], job["start_mode"],
                     job["start_date_utc"], job["start_external_id"], job["poll_interval_minutes"],
-                    job["config_json"], job["rules_json"],
+                    json_dump({**json_load(job["config_json"], {}), "backfill_before": None, "backfill_done": False})
+                    if job["connector_code"] == "eitaa" else job["config_json"],
+                    job["rules_json"],
                 ),
             )
             new_id = cursor.lastrowid
