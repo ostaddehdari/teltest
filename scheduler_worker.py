@@ -101,7 +101,7 @@ def due_jobs():
             FROM extraction_jobs
             WHERE
                 watch_enabled=1
-                AND connector_code='telegram'
+                AND connector_code IN ('telegram', 'eitaa')
                 AND next_run_at IS NOT NULL
                 AND status <> 'running'
             ORDER BY
@@ -287,6 +287,12 @@ def execute_job(
     job_id
 ):
 
+    from job_engine import db_connect
+    with db_connect() as _conn:
+        _kind = _conn.execute("SELECT connector_code FROM extraction_jobs WHERE id=?", (job_id,)).fetchone()
+    if _kind and _kind["connector_code"] == "eitaa":
+        from eitaa_source import run_eitaa_job
+        return run_eitaa_job(job_id, watch_run=True)
     #
     # Heavy modules are intentionally imported only after
     # at least one due job exists.
