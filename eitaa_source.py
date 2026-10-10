@@ -24,7 +24,7 @@ from content_rules import apply_content_rules, sync_content_index
 
 BASE_PATH = "/teltest"
 CHANNEL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]{3,63}$")
-IMAGE_RE = re.compile(r'background-image\s*:\s*url\(\s*["\\\']?([^)"\\\']+)', re.I)
+IMAGE_RE = re.compile(r'url\(([^)]+)\)', re.I)
 MAX_PAGE_BYTES = 5 * 1024 * 1024
 
 
@@ -95,7 +95,7 @@ def parse_page(html, username):
         for image in node.select(".etme_widget_message_photo_wrap, .etme_widget_message_photo"):
             match = IMAGE_RE.search(image.get("style") or "")
             if match:
-                add("photo", match.group(1))
+                add("photo", match.group(1).strip(" \\"'"))
         for video in node.select("video[src], video source[src]"):
             add("video", video.get("src"))
         for a in node.select("a.etme_widget_message_document_wrap[href], a.etme_widget_message_video_player[href]"):
