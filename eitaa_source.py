@@ -18,8 +18,9 @@ from flask import jsonify
 from job_engine import db_connect
 from content_rules import normalize_rules
 from telegram_extractor_v2 import (
-    json_dump, parse_persian_date, persist_messages, write_operation_log,
+    json_dump, parse_persian_date, write_operation_log,
 )
+from content_rules import apply_content_rules, sync_content_index
 
 BASE_PATH = "/teltest"
 CHANNEL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]{3,63}$")
@@ -221,6 +222,78 @@ def create_eitaa_job(data):
     write_operation_log(job_id, "JOB_CREATED", f"کانال عمومی ایتا: @{username}")
     return jsonify(ok=True, job_id=job_id, status="watching" if watch else "draft",
                    message="جاب استخراج ایتا ساخته شد."), 201
+
+
+def persist_messages(job_id, result, elapsed):
+    rows = result["messages"]
+    with closing(db_connect()) as conn:
+        job = conn.execute("SELECT * FROM extraction_jobs WHERE id=?", (job_id,)).fetchone()
+        rules = normalize_rules(json.loads(job["rules_json"] or "{}"))
+        inserted = updated = skipped = 0
+        for item in rows:
+            evaluation = apply_content_rules(item["raw_text"], rules)
+            skipped += int(evaluation["excluded"])
+            old = conn.execute("""
+                SELECT id FROM content_items WHERE connector_code='eitaa'
+                AND source_key=? AND external_id=?
+            """, (result["source_key"], item["external_id"])).fetchone()
+            digest = hashlib.sha256(json_dump(item).encode()).hexdigest()
+            conn.execute("""
+                INSERT INTO content_items
+                (connector_code,source_key,source_ref,source_title,external_id,
+                 published_at,content_type,raw_text,processed_text,media_json,
+                 metadata_json,content_hash,updated_at)
+                VALUES('eitaa',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+                ON CONFLICT(connector_code,source_key,external_id) DO UPDATE SET
+                  source_title=excluded.source_title, published_at=excluded.published_at,
+                  content_type=excluded.content_type, raw_text=excluded.raw_text,
+                  processed_text=excluded.processed_text, media_json=excluded.media_json,
+                  metadata_json=excluded.metadata_json,content_hash=excluded.content_hash,
+                  updated_at=CURRENT_TIMESTAMP
+            """, (result["source_key"], job["source_ref"], result["source_title"],
+                  item["external_id"], item["published_at"], item["content_type"],
+                  item["raw_text"], evaluation["processed_text"],
+                  json_dump(item["media"]), json_dump(item["metadata"]), digest))
+            content_id = conn.execute("""
+                SELECT id FROM content_items WHERE connector_code='eitaa'
+                AND source_key=? AND external_id=?
+            """, (result["source_key"],item["external_id"])).fetchone()["id"]
+            conn.execute("""
+                INSERT INTO extraction_job_items
+                (extraction_job_id,content_id,processed_text,excluded,rule_reason,rules_hash,processed_at)
+                VALUES(?,?,?,?,?,?,CURRENT_TIMESTAMP)
+                ON CONFLICT(extraction_job_id,content_id) DO UPDATE SET
+                  processed_text=excluded.processed_text,excluded=excluded.excluded,
+                  rule_reason=excluded.rule_reason,rules_hash=excluded.rules_hash,
+                  processed_at=CURRENT_TIMESTAMP
+            """, (job_id,content_id,evaluation["processed_text"],int(evaluation["excluded"]),
+                  evaluation["reason"],hashlib.sha256(json_dump(rules).encode()).hexdigest()))
+            sync_content_index(conn,content_id,item["raw_text"])
+            updated += int(bool(old))
+            inserted += int(not old)
+        cursor = max([int(job["cursor_external_id"] or 0)] +
+                     [int(i["external_id"]) for i in rows])
+        published = sorted([i["published_at"] for i in rows if i["published_at"]])
+        next_run = (datetime.now(timezone.utc) + timedelta(
+            minutes=int(job["poll_interval_minutes"] or 5))).isoformat() if job["watch_enabled"] else None
+        conn.execute("""
+            UPDATE extraction_jobs SET source_key=?,source_title=?,status=?,
+            cursor_external_id=?,cursor_published_at=?,next_run_at=?,
+            last_success_at=CURRENT_TIMESTAMP,last_error=NULL,updated_at=CURRENT_TIMESTAMP
+            WHERE id=?
+        """, (result["source_key"],result["source_title"],
+              "watching" if job["watch_enabled"] else "completed",
+              str(cursor),published[-1] if published else job["cursor_published_at"],
+              next_run,job_id))
+        conn.execute("""
+            UPDATE extraction_runs SET status='completed', resolved_source_key=?,
+            fetched_count=?,inserted_count=?,updated_count=?,skipped_count=?,
+            elapsed_seconds=?,finished_at=CURRENT_TIMESTAMP
+            WHERE id=(SELECT id FROM extraction_runs WHERE extraction_job_id=?
+                      AND status='running' ORDER BY id DESC LIMIT 1)
+        """, (result["source_key"],len(rows),inserted,updated,skipped,elapsed,job_id))
+        conn.commit()
+    return inserted,updated,skipped
 
 
 def run_eitaa_job(job_id, watch_run=False):
