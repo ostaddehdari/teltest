@@ -872,8 +872,8 @@ def init_telegram_extractor_v2(
         job = extraction_job(job_id)
         if not job:
             return jsonify(ok=False, error="جاب استخراج پیدا نشد."), 404
-        if job["connector_code"] != "telegram":
-            return jsonify(ok=False, error="در Stage 08 فقط تلگرام قابل اجرا است."), 400
+        if job["connector_code"] not in ("telegram", "eitaa"):
+            return jsonify(ok=False, error="نوع منبع پشتیبانی نمی‌شود."), 400
         if job["status"] == "running":
             return jsonify(ok=False, error="این جاب هم‌اکنون در حال اجرا است."), 409
         if job["connector_code"] == "eitaa":
