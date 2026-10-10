@@ -75,6 +75,11 @@
 
     <link
         rel="stylesheet"
+        href="{{ url_for('static', filename='app-stage12.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
         href="{{ url_for('static', filename='operations-center.css') }}"
     >
 
@@ -873,9 +878,196 @@
                     <label for="transferName">نام جاب</label>
                     <input id="transferName" name="name" type="text" maxlength="255" placeholder="مثلاً انتقال اخبار منتخب">
                 </div>
-                <div class="form-field">
-                    <label for="transferExtractionJob">جاب استخراج مبدا</label>
-                    <select id="transferExtractionJob" name="extraction_job_id" required></select>
+                <div class="transfer-selector-editor full">
+
+                    <div class="transfer-selector-head">
+
+                        <div>
+                            <strong>
+                                انتخاب محتوای انتقال
+                            </strong>
+
+                            <small>
+                                محتوا را از جاب، منبع، هشتگ،
+                                جستجو یا انتخاب دستی بسازید.
+                            </small>
+                        </div>
+
+                        <span
+                            class="badge"
+                            id="transferSelectorPreview"
+                        >
+                            هنوز بررسی نشده
+                        </span>
+
+                    </div>
+
+
+                    <div class="transfer-selector-grid">
+
+                        <label>
+                            روش انتخاب
+
+                            <select
+                                id="transferSelectorType"
+                                name="selector_type"
+                            >
+                                <option value="extraction_job">
+                                    جاب استخراج
+                                </option>
+
+                                <option value="source">
+                                    منبع / کانال
+                                </option>
+
+                                <option value="hashtag">
+                                    هشتگ
+                                </option>
+
+                                <option value="search">
+                                    فیلتر فعلی کتابخانه
+                                </option>
+
+                                <option value="saved_search">
+                                    جستجوی ذخیره‌شده
+                                </option>
+
+                                <option value="manual">
+                                    انتخاب دستی
+                                </option>
+                            </select>
+                        </label>
+
+
+                        <div
+                            data-transfer-selector-panel="extraction_job"
+                        >
+                            <label>
+                                جاب استخراج
+
+                                <select
+                                    id="transferExtractionJob"
+                                ></select>
+                            </label>
+                        </div>
+
+
+                        <div
+                            data-transfer-selector-panel="source"
+                            hidden
+                        >
+                            <label>
+                                منبع
+
+                                <select
+                                    id="transferSourceSelector"
+                                ></select>
+                            </label>
+                        </div>
+
+
+                        <div
+                            data-transfer-selector-panel="hashtag"
+                            hidden
+                        >
+                            <label>
+                                هشتگ
+
+                                <input
+                                    id="transferHashtagSelector"
+                                    type="text"
+                                    list="transferHashtagOptions"
+                                    placeholder="#خبر"
+                                >
+
+                                <datalist
+                                    id="transferHashtagOptions"
+                                ></datalist>
+                            </label>
+                        </div>
+
+
+                        <div
+                            data-transfer-selector-panel="search"
+                            hidden
+                        >
+                            <div class="selector-action-card">
+
+                                <strong>
+                                    فیلتر فعلی کتابخانه محتوا
+                                </strong>
+
+                                <small
+                                    id="transferSearchFilterSummary"
+                                >
+                                    ابتدا در کتابخانه محتوا فیلتر موردنظر را تنظیم کنید.
+                                </small>
+
+                                <button
+                                    type="button"
+                                    class="btn secondary"
+                                    id="captureLibrarySearch"
+                                >
+                                    استفاده از فیلتر فعلی
+                                </button>
+
+                            </div>
+                        </div>
+
+
+                        <div
+                            data-transfer-selector-panel="saved_search"
+                            hidden
+                        >
+                            <label>
+                                جستجوی ذخیره‌شده
+
+                                <select
+                                    id="transferSavedSearchSelector"
+                                ></select>
+                            </label>
+                        </div>
+
+
+                        <div
+                            data-transfer-selector-panel="manual"
+                            hidden
+                        >
+                            <div class="selector-action-card">
+
+                                <strong>
+                                    انتخاب دستی محتوا
+                                </strong>
+
+                                <span
+                                    id="transferManualCount"
+                                >
+                                    ۰ مورد انتخاب شده
+                                </span>
+
+                                <small>
+                                    محتوا را در کتابخانه با Checkbox انتخاب کنید.
+                                </small>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <div class="selector-preview-actions">
+
+                        <button
+                            type="button"
+                            class="btn soft"
+                            id="previewTransferSelector"
+                        >
+                            <i class="fa-regular fa-eye"></i>
+                            بررسی تعداد محتوا
+                        </button>
+
+                    </div>
+
                 </div>
                 <div class="transfer-destinations-editor full">
                     <div class="transfer-destinations-head">
@@ -988,6 +1180,17 @@
 
 
             <div class="section-actions">
+
+                <button
+                    type="button"
+                    class="btn soft"
+                    id="createTransferFromSelected"
+                >
+                    <i class="fa-solid fa-check-double"></i>
+                    انتقال انتخاب‌ها
+                    <span id="manualContentSelectionCount">۰</span>
+                </button>
+
 
                 <button
                     type="button"
@@ -2012,7 +2215,7 @@
                     </span>
 
                     <code>
-                        11 / 16
+                        12 / 16
                     </code>
 
                 </div>
@@ -2053,6 +2256,10 @@
 
 <script
     src="{{ url_for('static', filename='stage11.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='stage12.js') }}"
 ></script>
 
 <script

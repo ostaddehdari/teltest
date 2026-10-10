@@ -1,0 +1,146 @@
+/* ==========================================================
+   TELTEST STAGE 12 — TRANSFER QUERY BUILDER
+   ========================================================== */
+
+.transfer-selector-editor {
+    display: grid;
+    gap: .85rem;
+    padding: .9rem;
+    border: 1px solid #dbeafe;
+    border-radius: 16px;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(239,246,255,.88),
+            rgba(245,243,255,.72)
+        );
+}
+
+.transfer-selector-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+}
+
+.transfer-selector-head > div {
+    display: grid;
+    gap: .18rem;
+}
+
+.transfer-selector-head strong {
+    color: #1e293b;
+}
+
+.transfer-selector-head small {
+    color: #64748b;
+    font-size: .73rem;
+}
+
+.transfer-selector-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0,1fr)
+        );
+    gap: .75rem;
+}
+
+.transfer-selector-grid > label,
+.transfer-selector-grid > div > label {
+    display: grid;
+    gap: .35rem;
+    color: #64748b;
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.transfer-selector-grid select,
+.transfer-selector-grid input {
+    width: 100%;
+    min-height: 42px;
+    padding: .55rem .65rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 11px;
+    background: #fff;
+    color: #1e293b;
+    outline: none;
+}
+
+.transfer-selector-grid select:focus,
+.transfer-selector-grid input:focus {
+    border-color: #818cf8;
+    box-shadow:
+        0 0 0 3px
+        rgba(99,102,241,.08);
+}
+
+.selector-action-card {
+    display: grid;
+    gap: .45rem;
+    min-height: 100%;
+    padding: .75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: rgba(255,255,255,.85);
+}
+
+.selector-action-card strong {
+    color: #334155;
+    font-size: .82rem;
+}
+
+.selector-action-card small,
+.selector-action-card span {
+    color: #64748b;
+    font-size: .73rem;
+    line-height: 1.7;
+}
+
+.selector-preview-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.manual-content-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    align-self: flex-start;
+    padding: .32rem .52rem;
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    background: #f8fbff;
+    color: #475569;
+    font-size: .7rem;
+    cursor: pointer;
+}
+
+.manual-content-selector input {
+    accent-color: #4f46e5;
+}
+
+#createTransferFromSelected span {
+    min-width: 18px;
+    margin-right: .2rem;
+    padding: .05rem .3rem;
+    border-radius: 999px;
+    background: rgba(79,70,229,.09);
+}
+
+@media (max-width: 720px) {
+
+    .transfer-selector-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .transfer-selector-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .selector-preview-actions .btn {
+        width: 100%;
+    }
+}

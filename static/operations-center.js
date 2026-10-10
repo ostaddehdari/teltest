@@ -441,6 +441,10 @@
                     <strong>${esc(item.name || `انتقال #${item.id}`)}</strong>
                     <small>${number(destinations.length)} مقصد · ${esc(providerText)}</small>
                 </div>
+                <div class="v2-job-metric">
+                    <span>انتخاب محتوا</span>
+                    <strong>${esc(item.selector_label || item.selector_type || "—")}</strong>
+                </div>
                 <div class="v2-job-metric"><span>در فهرست</span><strong>${number(counts.listed)}</strong></div>
                 <div class="v2-job-metric"><span>در حال انتقال</span><strong>${number(counts.transferring)}</strong></div>
                 <div class="v2-job-metric"><span>منتقل‌شده</span><strong>${number(counts.transferred)}</strong></div>
@@ -524,6 +528,7 @@
                 ])}
                 <div class="workspace-panel" data-workspace-panel="transfer:summary">
                     <div class="settings-row"><span>وضعیت</span><strong>${esc(statusNames[data.job.status] || data.job.status)}</strong></div>
+                    <div class="settings-row"><span>انتخاب محتوا</span><strong>${esc(data.job.selector_label || data.job.selector_type || "—")}</strong></div>
                     <div class="settings-row"><span>تعداد مقصدها</span><strong>${number((data.destinations || []).length)}</strong></div>
                     <div class="settings-row"><span>تعداد اجرا</span><strong>${number((data.runs || []).length)}</strong></div>
                     ${destinationSummary(data.destinations)}
@@ -604,7 +609,43 @@
         const form = event.currentTarget;
         const button = document.getElementById("createTransferJob");
         const payload = Object.fromEntries(new FormData(form).entries());
-        payload.extraction_job_id = Number(payload.extraction_job_id);
+
+        try {
+
+            if (
+                window.teltestBuildTransferSelector
+            ) {
+
+                const selector =
+                    window.teltestBuildTransferSelector(
+                        form
+                    );
+
+                payload.selector_type =
+                    selector.selector_type;
+
+                payload.selector =
+                    selector.selector;
+
+            } else {
+
+                payload.extraction_job_id =
+                    Number(
+                        payload.extraction_job_id
+                    );
+
+            }
+
+        } catch (error) {
+
+            notify(
+                error.message,
+                "error"
+            );
+
+            return;
+        }
+
         const container = document.getElementById("transferDestinationsBuilder");
         payload.destinations = collectDestinations(container);
         if (!payload.destinations.length) {

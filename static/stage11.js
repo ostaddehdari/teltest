@@ -308,6 +308,12 @@
     }
 
 
+    window.teltestStage11CurrentFilters =
+        function stage11CurrentFilters() {
+            return filters();
+        };
+
+
     function applyFilters(
         value
     ) {
@@ -536,6 +542,20 @@
 
         return `
             <article class="content-row stage11-content-card">
+
+                <label class="manual-content-selector">
+                    <input
+                        type="checkbox"
+                        data-library-select-content="${item.id}"
+                        ${
+                            window.teltestStage12IsSelected
+                            && window.teltestStage12IsSelected(item.id)
+                                ? "checked"
+                                : ""
+                        }
+                    >
+                    <span>انتخاب</span>
+                </label>
 
                 <div class="content-row-main">
 

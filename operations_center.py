@@ -28,6 +28,13 @@ from provider_destinations import (
     validate_destination_payload,
 )
 
+from transfer_selector_v2 import (
+    content_source_context,
+    selector_content_ids,
+    selector_label,
+    validate_selector_payload,
+)
+
 
 BASE_PATH = "/teltest"
 OPERATIONS_VERSION = "2"
@@ -274,38 +281,92 @@ def transfer_row(conn, job_id):
 
 
 def sync_transfer_plan(conn, transfer_job_id):
-    job = transfer_row(conn, transfer_job_id)
+
+    job = transfer_row(
+        conn,
+        transfer_job_id,
+    )
+
     if not job:
         return 0
-    selector = json_load(job["selector_json"], {})
-    extraction_job_id = selector.get("extraction_job_id")
-    if not extraction_job_id:
-        return 0
+
+
+    selector = json_load(
+        job[
+            "selector_json"
+        ],
+        {},
+    )
+
+
+    content_ids = selector_content_ids(
+        conn,
+        job[
+            "selector_type"
+        ],
+        selector,
+    )
+
+
     destinations = conn.execute(
-        "SELECT id FROM transfer_destinations WHERE transfer_job_id = ? AND enabled = 1",
-        (transfer_job_id,),
-    ).fetchall()
-    contents = conn.execute(
         """
-        SELECT content_id
-        FROM extraction_job_items
+        SELECT id
+        FROM transfer_destinations
         WHERE
-            extraction_job_id = ?
-            AND COALESCE(excluded, 0) = 0
+            transfer_job_id=?
+            AND enabled=1
+        ORDER BY
+            position,
+            id
         """,
-        (extraction_job_id,),
+        (
+            transfer_job_id,
+        ),
     ).fetchall()
+
+
+    inserted = 0
+
+
     for destination in destinations:
-        for content in contents:
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO transfer_job_items
-                    (transfer_job_id, destination_id, content_id, status)
-                VALUES(?, ?, ?, 'listed')
-                """,
-                (transfer_job_id, destination["id"], content["content_id"]),
+
+        before = conn.total_changes
+
+
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO
+                transfer_job_items(
+                    transfer_job_id,
+                    destination_id,
+                    content_id,
+                    status
+                )
+            VALUES(
+                ?, ?, ?, 'listed'
             )
-    return len(destinations) * len(contents)
+            """,
+            [
+                (
+                    transfer_job_id,
+                    destination[
+                        "id"
+                    ],
+                    content_id,
+                )
+                for content_id
+                in content_ids
+            ],
+        )
+
+
+        inserted += (
+            conn.total_changes
+            - before
+        )
+
+
+    return inserted
 
 
 def transfer_counts(conn, job_id):
@@ -847,7 +908,18 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
             for row in jobs:
                 sync_transfer_plan(conn, row["id"])
                 item = dict(row)
-                item["selector"] = json_load(item.pop("selector_json", "{}"))
+                item["selector"] = json_load(
+                    item.pop(
+                        "selector_json",
+                        "{}",
+                    )
+                )
+
+                item["selector_label"] = selector_label(
+                    item["selector_type"],
+                    item["selector"],
+                )
+
                 item["counts"] = transfer_counts(conn, row["id"])
                 item["destinations"] = destination_payloads(conn, row["id"])
                 items.append(item)
@@ -857,54 +929,255 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
     @app.post(f"{BASE_PATH}/api/v2/operations/transfer-jobs")
     @api_post_required
     def create_transfer_job():
+
         data = json_body()
-        try:
-            extraction_job_id = int(data.get("extraction_job_id"))
-        except (TypeError, ValueError) as exc:
-            return jsonify(ok=False, error=str(exc) or "تنظیمات انتقال معتبر نیست."), 400
-        raw_destinations = data.get("destinations")
-        if not isinstance(raw_destinations, list):
+
+
+        raw_destinations = data.get(
+            "destinations"
+        )
+
+
+        if not isinstance(
+            raw_destinations,
+            list,
+        ):
+
             raw_destinations = [
                 {
-                    "provider_code": data.get("provider_code") or "telegram_user",
-                    "provider_account_id": data.get("provider_account_id"),
-                    "destination_ref": data.get("destination_ref"),
-                    "mode": data.get("mode") or "copy",
+                    "provider_code":
+                        data.get(
+                            "provider_code"
+                        )
+                        or "telegram_user",
+
+                    "provider_account_id":
+                        data.get(
+                            "provider_account_id"
+                        ),
+
+                    "destination_ref":
+                        data.get(
+                            "destination_ref"
+                        ),
+
+                    "mode":
+                        data.get(
+                            "mode"
+                        )
+                        or "copy",
                 }
             ]
-        if not 1 <= len(raw_destinations) <= 20:
-            return jsonify(ok=False, error="هر جاب باید بین ۱ تا ۲۰ مقصد داشته باشد."), 400
+
+
+        if not (
+            1
+            <= len(
+                raw_destinations
+            )
+            <= 20
+        ):
+
+            return jsonify(
+                ok=False,
+                error=(
+                    "هر جاب باید بین ۱ تا ۲۰ مقصد داشته باشد."
+                ),
+            ), 400
+
+
         try:
+
             destinations = [
-                validate_destination_payload(item, account_get)
-                for item in raw_destinations
-                if isinstance(item, dict)
+                validate_destination_payload(
+                    item,
+                    account_get,
+                )
+
+                for item
+                in raw_destinations
+
+                if isinstance(
+                    item,
+                    dict,
+                )
             ]
-            if len(destinations) != len(raw_destinations):
-                raise ValueError("ساختار یکی از مقصدها معتبر نیست.")
+
+
+            if (
+                len(destinations)
+                != len(
+                    raw_destinations
+                )
+            ):
+
+                raise ValueError(
+                    "ساختار یکی از مقصدها معتبر نیست."
+                )
+
+
         except ValueError as exc:
-            return jsonify(ok=False, error=str(exc)), 400
-        with closing(db_connect()) as conn:
-            extraction = extraction_row(conn, extraction_job_id)
-            if not extraction:
-                return jsonify(ok=False, error="جاب استخراج مبدا پیدا نشد."), 404
-            name = str(data.get("name") or f"انتقال {extraction['name']}").strip()[:255]
+
+            return jsonify(
+                ok=False,
+                error=str(exc),
+            ), 400
+
+
+        with closing(
+            db_connect()
+        ) as conn:
+
+            try:
+
+                selector_type, selector = (
+                    validate_selector_payload(
+                        data,
+                        conn,
+                    )
+                )
+
+
+            except ValueError as exc:
+
+                return jsonify(
+                    ok=False,
+                    error=str(exc),
+                ), 400
+
+
+            selected_ids = (
+                selector_content_ids(
+                    conn,
+                    selector_type,
+                    selector,
+                )
+            )
+
+
+            if not selected_ids:
+
+                return jsonify(
+                    ok=False,
+                    error=(
+                        "این انتخاب فعلاً هیچ محتوایی ندارد."
+                    ),
+                ), 400
+
+
+            default_name = (
+                "انتقال "
+                + selector_label(
+                    selector_type,
+                    selector,
+                )
+            )
+
+
+            name = str(
+                data.get(
+                    "name"
+                )
+                or default_name
+            ).strip()[:255]
+
+
             cursor = conn.execute(
                 """
-                INSERT INTO transfer_jobs(name, selector_type, selector_json, status, created_at, updated_at)
-                VALUES(?, 'extraction_job', ?, 'draft', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO transfer_jobs(
+                    name,
+                    selector_type,
+                    selector_json,
+                    status,
+                    created_at,
+                    updated_at
+                )
+                VALUES(
+                    ?, ?, ?,
+                    'draft',
+                    CURRENT_TIMESTAMP,
+                    CURRENT_TIMESTAMP
+                )
                 """,
-                (name, json_dump({"extraction_job_id": extraction_job_id})),
+                (
+                    name,
+                    selector_type,
+                    json_dump(
+                        selector
+                    ),
+                ),
             )
+
+
             job_id = cursor.lastrowid
-            destination_ids = insert_destinations(conn, job_id, destinations)
-            sync_transfer_plan(conn, job_id)
+
+
+            destination_ids = insert_destinations(
+                conn,
+                job_id,
+                destinations,
+            )
+
+
+            inserted = sync_transfer_plan(
+                conn,
+                job_id,
+            )
+
+
             conn.commit()
-        labels = ", ".join(PROVIDERS[item["provider_code"]]["short_label"] for item in destinations)
-        log_job("transfer", job_id, "JOB_CREATED", f"{len(destinations)} مقصد ثبت شد: {labels}")
+
+
+        labels = ", ".join(
+            PROVIDERS[
+                item[
+                    "provider_code"
+                ]
+            ][
+                "short_label"
+            ]
+
+            for item
+            in destinations
+        )
+
+
+        log_job(
+            "transfer",
+            job_id,
+            "JOB_CREATED",
+            (
+                f"Selector={selector_type} | "
+                f"{len(selected_ids)} محتوا | "
+                f"{len(destinations)} مقصد: "
+                f"{labels}"
+            ),
+        )
+
+
         return jsonify(
-            ok=True, job_id=job_id, destination_ids=destination_ids,
-            destination_count=len(destination_ids), message="جاب انتقال چندمقصدی ساخته شد.",
+            ok=True,
+            job_id=
+                job_id,
+            selector_type=
+                selector_type,
+            selector=
+                selector,
+            selected_count=
+                len(
+                    selected_ids
+                ),
+            planned_count=
+                inserted,
+            destination_ids=
+                destination_ids,
+            destination_count=
+                len(
+                    destination_ids
+                ),
+            message=(
+                "جاب انتقال Query-based ساخته شد."
+            ),
         ), 201
 
     @app.get(f"{BASE_PATH}/api/v2/operations/transfer-jobs/<int:job_id>/dashboard")
@@ -939,7 +1212,19 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
                 (job_id,),
             ).fetchall()
             item = dict(job)
-            item["selector"] = json_load(item.pop("selector_json", "{}"))
+
+            item["selector"] = json_load(
+                item.pop(
+                    "selector_json",
+                    "{}",
+                )
+            )
+
+            item["selector_label"] = selector_label(
+                item["selector_type"],
+                item["selector"],
+            )
+
             payloads = []
             for row in rows:
                 data = content_payload(conn, row, row["item_status"])
@@ -964,38 +1249,230 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
             counts=counts, runs=[dict(row) for row in runs], logs=logs, items=payloads,
         )
 
-    @app.route(f"{BASE_PATH}/api/v2/operations/transfer-jobs/<int:job_id>", methods=["PATCH"])
+    @app.route(
+        f"{BASE_PATH}/api/v2/operations/transfer-jobs/<int:job_id>",
+        methods=["PATCH"],
+    )
     @api_post_required
     def edit_transfer_job(job_id):
+
         data = json_body()
-        raw_destinations = data.get("destinations")
-        if not isinstance(raw_destinations, list) or not 1 <= len(raw_destinations) <= 20:
-            return jsonify(ok=False, error="برای جاب بین ۱ تا ۲۰ مقصد وارد کنید."), 400
-        try:
-            destinations = [
-                validate_destination_payload(item, account_get)
-                for item in raw_destinations
-                if isinstance(item, dict)
-            ]
-            if len(destinations) != len(raw_destinations):
-                raise ValueError("ساختار یکی از مقصدها معتبر نیست.")
-        except ValueError as exc:
-            return jsonify(ok=False, error=str(exc)), 400
-        with closing(db_connect()) as conn:
-            job = transfer_row(conn, job_id)
-            if not job:
-                return jsonify(ok=False, error="جاب انتقال پیدا نشد."), 404
-            name = str(data.get("name") or job["name"]).strip()[:255]
-            conn.execute(
-                "UPDATE transfer_jobs SET name=?, status='draft', last_error=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                (name, job_id),
+
+
+        raw_destinations = data.get(
+            "destinations"
+        )
+
+
+        if (
+            not isinstance(
+                raw_destinations,
+                list,
             )
-            conn.execute("DELETE FROM transfer_destinations WHERE transfer_job_id=?", (job_id,))
-            insert_destinations(conn, job_id, destinations)
-            sync_transfer_plan(conn, job_id)
+            or not (
+                1
+                <= len(
+                    raw_destinations
+                )
+                <= 20
+            )
+        ):
+
+            return jsonify(
+                ok=False,
+                error=(
+                    "برای جاب بین ۱ تا ۲۰ مقصد وارد کنید."
+                ),
+            ), 400
+
+
+        try:
+
+            destinations = [
+                validate_destination_payload(
+                    item,
+                    account_get,
+                )
+
+                for item
+                in raw_destinations
+
+                if isinstance(
+                    item,
+                    dict,
+                )
+            ]
+
+
+            if (
+                len(destinations)
+                != len(
+                    raw_destinations
+                )
+            ):
+
+                raise ValueError(
+                    "ساختار یکی از مقصدها معتبر نیست."
+                )
+
+
+        except ValueError as exc:
+
+            return jsonify(
+                ok=False,
+                error=str(exc),
+            ), 400
+
+
+        with closing(
+            db_connect()
+        ) as conn:
+
+            job = transfer_row(
+                conn,
+                job_id,
+            )
+
+
+            if not job:
+
+                return jsonify(
+                    ok=False,
+                    error=(
+                        "جاب انتقال پیدا نشد."
+                    ),
+                ), 404
+
+
+            if (
+                data.get(
+                    "selector_type"
+                )
+                or data.get(
+                    "selector"
+                )
+            ):
+
+                try:
+
+                    selector_type, selector = (
+                        validate_selector_payload(
+                            data,
+                            conn,
+                        )
+                    )
+
+
+                except ValueError as exc:
+
+                    return jsonify(
+                        ok=False,
+                        error=str(exc),
+                    ), 400
+
+
+            else:
+
+                selector_type = (
+                    job[
+                        "selector_type"
+                    ]
+                )
+
+                selector = json_load(
+                    job[
+                        "selector_json"
+                    ],
+                    {},
+                )
+
+
+            name = str(
+                data.get(
+                    "name"
+                )
+                or job[
+                    "name"
+                ]
+            ).strip()[:255]
+
+
+            conn.execute(
+                """
+                UPDATE transfer_jobs
+                SET
+                    name=?,
+                    selector_type=?,
+                    selector_json=?,
+                    status='draft',
+                    last_error=NULL,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE id=?
+                """,
+                (
+                    name,
+                    selector_type,
+                    json_dump(
+                        selector
+                    ),
+                    job_id,
+                ),
+            )
+
+
+            #
+            # Existing behavior replaces destinations.
+            #
+            conn.execute(
+                """
+                DELETE FROM transfer_destinations
+                WHERE transfer_job_id=?
+                """,
+                (
+                    job_id,
+                ),
+            )
+
+
+            insert_destinations(
+                conn,
+                job_id,
+                destinations,
+            )
+
+
+            sync_transfer_plan(
+                conn,
+                job_id,
+            )
+
+
             conn.commit()
-        log_job("transfer", job_id, "JOB_EDITED", f"جاب با {len(destinations)} مقصد ویرایش و صف بازسازی شد.")
-        return jsonify(ok=True, job_id=job_id, message="جاب انتقال ویرایش شد.")
+
+
+        log_job(
+            "transfer",
+            job_id,
+            "JOB_EDITED",
+            (
+                f"Selector={selector_type} | "
+                f"{len(destinations)} مقصد"
+            ),
+        )
+
+
+        return jsonify(
+            ok=True,
+            job_id=
+                job_id,
+            selector_type=
+                selector_type,
+            selector=
+                selector,
+            message=(
+                "جاب انتقال ویرایش شد."
+            ),
+        )
 
     @app.post(f"{BASE_PATH}/api/v2/operations/transfer-jobs/<int:job_id>/repeat")
     @api_post_required
@@ -1162,254 +1639,870 @@ def init_operations_center(app, login_required, api_post_required, telegram_clie
     @app.post(f"{BASE_PATH}/api/v2/operations/transfer-jobs/<int:job_id>/run")
     @api_post_required
     def run_multi_provider_transfer_job(job_id):
-        with closing(db_connect()) as conn:
-            job = transfer_row(conn, job_id)
+
+        with closing(
+            db_connect()
+        ) as conn:
+
+            job = transfer_row(
+                conn,
+                job_id,
+            )
+
+
             if not job:
-                return jsonify(ok=False, error="جاب انتقال پیدا نشد."), 404
-            selector = json_load(job["selector_json"], {})
-            extraction = extraction_row(conn, selector.get("extraction_job_id"))
+
+                return jsonify(
+                    ok=False,
+                    error=(
+                        "جاب انتقال پیدا نشد."
+                    ),
+                ), 404
+
+
             destinations = conn.execute(
                 """
-                SELECT * FROM transfer_destinations
-                WHERE transfer_job_id=? AND enabled=1 ORDER BY position, id
+                SELECT *
+                FROM transfer_destinations
+                WHERE
+                    transfer_job_id=?
+                    AND enabled=1
+                ORDER BY
+                    position,
+                    id
                 """,
-                (job_id,),
+                (
+                    job_id,
+                ),
             ).fetchall()
-            if not extraction or not destinations:
-                return jsonify(ok=False, error="مبدا یا مقصدهای انتقال کامل نیست."), 400
-            sync_transfer_plan(conn, job_id)
+
+
+            if not destinations:
+
+                return jsonify(
+                    ok=False,
+                    error=(
+                        "مقصد انتقال ثبت نشده است."
+                    ),
+                ), 400
+
+
+            sync_transfer_plan(
+                conn,
+                job_id,
+            )
+
+
             total_pending = conn.execute(
                 """
-                SELECT COUNT(*) FROM transfer_job_items
-                WHERE transfer_job_id=? AND status IN('listed','failed','transferring')
+                SELECT COUNT(*)
+                FROM transfer_job_items
+                WHERE
+                    transfer_job_id=?
+                    AND status IN(
+                        'listed',
+                        'failed',
+                        'transferring'
+                    )
                 """,
-                (job_id,),
+                (
+                    job_id,
+                ),
             ).fetchone()[0]
-            run = conn.execute(
-                "INSERT INTO transfer_runs(transfer_job_id,status,listed_count) VALUES(?, 'running', ?)",
-                (job_id, total_pending),
-            )
-            run_id = run.lastrowid
-            conn.execute(
-                "UPDATE transfer_jobs SET status='running', last_error=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                (job_id,),
-            )
-            conn.commit()
-            extraction = dict(extraction)
-            destinations = [dict(item) for item in destinations]
 
-        def mark(item_id, status, destination_external_id=None, error=None):
-            with closing(db_connect()) as marker:
+
+            run = conn.execute(
+                """
+                INSERT INTO transfer_runs(
+                    transfer_job_id,
+                    status,
+                    listed_count
+                )
+                VALUES(
+                    ?,
+                    'running',
+                    ?
+                )
+                """,
+                (
+                    job_id,
+                    total_pending,
+                ),
+            )
+
+
+            run_id = run.lastrowid
+
+
+            conn.execute(
+                """
+                UPDATE transfer_jobs
+                SET
+                    status='running',
+                    last_error=NULL,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE id=?
+                """,
+                (
+                    job_id,
+                ),
+            )
+
+
+            conn.commit()
+
+
+            destinations = [
+                dict(item)
+                for item
+                in destinations
+            ]
+
+
+        def mark(
+            item_id,
+            status,
+            destination_external_id=None,
+            error=None,
+        ):
+
+            with closing(
+                db_connect()
+            ) as marker:
+
                 marker.execute(
                     """
-                    UPDATE transfer_job_items SET status=?,
-                        attempts=attempts+CASE WHEN ?='transferring' THEN 1 ELSE 0 END,
-                        destination_external_id=COALESCE(?, destination_external_id),
+                    UPDATE transfer_job_items
+                    SET
+                        status=?,
+
+                        attempts=
+                            attempts
+                            + CASE
+                                WHEN ?='transferring'
+                                THEN 1
+                                ELSE 0
+                              END,
+
+                        destination_external_id=
+                            COALESCE(
+                                ?,
+                                destination_external_id
+                            ),
+
                         last_error=?,
-                        started_at=CASE WHEN ?='transferring' THEN CURRENT_TIMESTAMP ELSE started_at END,
-                        transferred_at=CASE WHEN ?='transferred' THEN CURRENT_TIMESTAMP ELSE transferred_at END,
-                        updated_at=CURRENT_TIMESTAMP WHERE id=?
+
+                        started_at=
+                            CASE
+                                WHEN ?='transferring'
+                                THEN CURRENT_TIMESTAMP
+                                ELSE started_at
+                            END,
+
+                        transferred_at=
+                            CASE
+                                WHEN ?='transferred'
+                                THEN CURRENT_TIMESTAMP
+                                ELSE transferred_at
+                            END,
+
+                        updated_at=
+                            CURRENT_TIMESTAMP
+
+                    WHERE id=?
                     """,
                     (
                         status,
                         status,
-                        str(destination_external_id) if destination_external_id is not None else None,
+                        (
+                            str(
+                                destination_external_id
+                            )
+                            if destination_external_id
+                            is not None
+                            else None
+                        ),
                         error,
                         status,
                         status,
                         item_id,
                     ),
                 )
+
+
                 marker.commit()
 
+
         started = time.perf_counter()
+
         destination_results = []
         errors_seen = []
+
+
         log_job(
             "transfer",
             job_id,
             "RUN_STARTED",
-            f"انتقال چندمقصدی با {len(destinations)} مقصد و {total_pending} آیتم آغاز شد.",
+            (
+                f"Query Transfer با "
+                f"{len(destinations)} مقصد و "
+                f"{total_pending} آیتم آغاز شد."
+            ),
         )
 
+
         for destination in destinations:
-            provider = normalize_provider(destination["provider_code"])
-            destination["provider_code"] = provider
-            label = PROVIDERS.get(provider, {}).get("short_label", provider)
-            with closing(db_connect()) as conn:
+
+            provider = normalize_provider(
+                destination[
+                    "provider_code"
+                ]
+            )
+
+
+            destination[
+                "provider_code"
+            ] = provider
+
+
+            label = PROVIDERS.get(
+                provider,
+                {},
+            ).get(
+                "short_label",
+                provider,
+            )
+
+
+            with closing(
+                db_connect()
+            ) as conn:
+
                 rows = conn.execute(
                     """
-                    SELECT tji.id AS transfer_item_id, ci.external_id,
-                           ci.content_type, ci.raw_text, ci.processed_text
+                    SELECT
+                        tji.id
+                            AS transfer_item_id,
+
+                        tji.content_id,
+
+                        ci.connector_code,
+                        ci.source_key,
+                        ci.source_ref,
+                        ci.source_title,
+                        ci.external_id,
+                        ci.content_type,
+                        ci.raw_text,
+                        ci.processed_text
+
                     FROM transfer_job_items tji
-                    INNER JOIN content_items ci ON ci.id=tji.content_id
-                    WHERE tji.transfer_job_id=? AND tji.destination_id=?
-                      AND tji.status IN('listed','failed','transferring')
-                    ORDER BY CAST(ci.external_id AS INTEGER) ASC
+
+                    INNER JOIN content_items ci
+                        ON ci.id=
+                            tji.content_id
+
+                    WHERE
+                        tji.transfer_job_id=?
+
+                        AND tji.destination_id=?
+
+                        AND tji.status IN(
+                            'listed',
+                            'failed',
+                            'transferring'
+                        )
+
+                    ORDER BY
+                        ci.source_key ASC,
+                        CAST(
+                            ci.external_id
+                            AS INTEGER
+                        ) ASC,
+                        ci.id ASC
                     """,
-                    (job_id, destination["id"]),
+                    (
+                        job_id,
+                        destination[
+                            "id"
+                        ],
+                    ),
                 ).fetchall()
-                rows = [dict(row) for row in rows]
+
+
+                rows = [
+                    dict(row)
+                    for row in rows
+                ]
+
+
                 conn.execute(
                     """
-                    UPDATE transfer_destinations SET status='running', last_error=NULL,
-                        updated_at=CURRENT_TIMESTAMP WHERE id=?
+                    UPDATE transfer_destinations
+                    SET
+                        status='running',
+                        last_error=NULL,
+                        updated_at=CURRENT_TIMESTAMP
+                    WHERE id=?
                     """,
-                    (destination["id"],),
+                    (
+                        destination[
+                            "id"
+                        ],
+                    ),
                 )
+
+
                 conn.commit()
 
+
             if not rows:
-                with closing(db_connect()) as conn:
+
+                with closing(
+                    db_connect()
+                ) as conn:
+
                     conn.execute(
-                        "UPDATE transfer_destinations SET status='completed', updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                        (destination["id"],),
+                        """
+                        UPDATE transfer_destinations
+                        SET
+                            status='completed',
+                            updated_at=CURRENT_TIMESTAMP
+                        WHERE id=?
+                        """,
+                        (
+                            destination[
+                                "id"
+                            ],
+                        ),
                     )
+
+
                     conn.commit()
+
+
                 destination_results.append(
-                    {"destination_id": destination["id"], "provider_code": provider, "status": "completed", "pending": 0}
+                    {
+                        "destination_id":
+                            destination[
+                                "id"
+                            ],
+
+                        "provider_code":
+                            provider,
+
+                        "status":
+                            "completed",
+
+                        "pending":
+                            0,
+                    }
                 )
+
+
                 continue
 
-            account_id = (
-                destination.get("provider_account_id")
-                if provider == "telegram_user"
-                else extraction.get("source_account_id")
-            )
-            account = account_get(account_id) if account_id else None
-            failure = None
-            if provider not in PROVIDERS:
-                failure = "پروایدر مقصد ناشناخته است."
-            elif provider != "telegram_user" and not provider_is_configured(provider):
-                failure = f"توکن {label} تنظیم نشده است."
-            elif not account or account["status"] != "connected":
-                failure = "اکانت تلگرام متصل برای خواندن محتوای مبدا در دسترس نیست."
 
-            try:
-                if failure:
-                    raise RuntimeError(failure)
-                log_job(
-                    "transfer",
-                    job_id,
-                    "DESTINATION_STARTED",
-                    f"{label} → {destination['destination_ref']} | {len(rows)} آیتم",
-                )
-                run_destination(
-                    telegram_client,
-                    account,
-                    extraction,
-                    destination,
-                    rows,
-                    mark,
-                )
-                with closing(db_connect()) as conn:
-                    failed = conn.execute(
-                        "SELECT COUNT(*) FROM transfer_job_items WHERE destination_id=? AND status='failed'",
-                        (destination["id"],),
-                    ).fetchone()[0]
-                    status = "failed" if failed else "completed"
-                    conn.execute(
-                        """
-                        UPDATE transfer_destinations SET status=?, last_error=NULL,
-                            updated_at=CURRENT_TIMESTAMP WHERE id=?
-                        """,
-                        (status, destination["id"]),
-                    )
-                    conn.commit()
-                if failed:
-                    errors_seen.append(f"{label}: {failed} آیتم ناموفق")
-                log_job(
-                    "transfer",
-                    job_id,
-                    "DESTINATION_FINISHED",
-                    f"{label} → {destination['destination_ref']} | status={status}",
-                    "warning" if failed else "info",
-                )
-                destination_results.append(
-                    {
-                        "destination_id": destination["id"],
-                        "provider_code": provider,
-                        "status": status,
-                        "pending": len(rows),
-                        "failed": failed,
-                    }
-                )
-            except Exception as exc:
-                error = f"{type(exc).__name__}: {exc}"[:2000]
-                errors_seen.append(f"{label}: {error}")
+            groups = {}
+
+
+            with closing(
+                db_connect()
+            ) as conn:
+
                 for row in rows:
-                    mark(row["transfer_item_id"], "failed", error=error)
-                with closing(db_connect()) as conn:
-                    conn.execute(
-                        """
-                        UPDATE transfer_destinations SET status='failed', last_error=?,
-                            updated_at=CURRENT_TIMESTAMP WHERE id=?
-                        """,
-                        (error, destination["id"]),
+
+                    context = (
+                        content_source_context(
+                            conn,
+                            row[
+                                "content_id"
+                            ],
+                        )
                     )
-                    conn.commit()
-                log_job(
-                    "transfer",
-                    job_id,
-                    "DESTINATION_FAILED",
-                    f"{label} → {destination['destination_ref']} | {error}",
-                    "error",
-                )
-                destination_results.append(
-                    {
-                        "destination_id": destination["id"],
-                        "provider_code": provider,
-                        "status": "failed",
-                        "pending": len(rows),
-                        "error": error,
-                    }
+
+
+                    if not context:
+
+                        mark(
+                            row[
+                                "transfer_item_id"
+                            ],
+                            "failed",
+                            error=(
+                                "Source context پیدا نشد."
+                            ),
+                        )
+
+                        errors_seen.append(
+                            f"{label}: Source context missing"
+                        )
+
+                        continue
+
+
+                    if (
+                        context[
+                            "connector_code"
+                        ]
+                        != "telegram"
+                    ):
+
+                        mark(
+                            row[
+                                "transfer_item_id"
+                            ],
+                            "failed",
+                            error=(
+                                "Connector این محتوا هنوز "
+                                "Adapter انتقال ندارد."
+                            ),
+                        )
+
+                        errors_seen.append(
+                            (
+                                f"{label}: "
+                                f"unsupported source "
+                                f"{context['connector_code']}"
+                            )
+                        )
+
+                        continue
+
+
+                    #
+                    # Telegram user destination uses the selected
+                    # user session. External bots use the account
+                    # associated with the extraction source.
+                    #
+                    account_id = (
+                        destination.get(
+                            "provider_account_id"
+                        )
+                        if provider
+                        == "telegram_user"
+                        else context.get(
+                            "source_account_id"
+                        )
+                    )
+
+
+                    key = (
+                        account_id,
+                        context.get(
+                            "source_ref"
+                        ),
+                    )
+
+
+                    groups.setdefault(
+                        key,
+                        {
+                            "context":
+                                context,
+
+                            "rows":
+                                [],
+                        },
+                    )[
+                        "rows"
+                    ].append(
+                        row
+                    )
+
+
+            group_errors = []
+
+
+            for (
+                account_id,
+                source_ref,
+            ), group in groups.items():
+
+                group_rows = group[
+                    "rows"
+                ]
+
+
+                account = (
+                    account_get(
+                        account_id
+                    )
+                    if account_id
+                    else None
                 )
 
-        elapsed = round(time.perf_counter() - started, 3)
-        with closing(db_connect()) as conn:
-            counts = transfer_counts(conn, job_id)
-            status = "failed" if counts["failed"] or errors_seen else "completed"
-            error_text = " | ".join(errors_seen)[:2000] if errors_seen else None
-            conn.execute(
-                "UPDATE transfer_jobs SET status=?, last_error=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                (status, error_text, job_id),
+
+                if (
+                    not account
+                    or account[
+                        "status"
+                    ]
+                    != "connected"
+                ):
+
+                    error = (
+                        "اکانت تلگرام متصل برای "
+                        f"خواندن منبع {source_ref} "
+                        "در دسترس نیست."
+                    )
+
+
+                    for row in group_rows:
+
+                        mark(
+                            row[
+                                "transfer_item_id"
+                            ],
+                            "failed",
+                            error=error,
+                        )
+
+
+                    group_errors.append(
+                        error
+                    )
+
+                    continue
+
+
+                extraction_context = {
+                    "source_ref":
+                        source_ref,
+
+                    "source_key":
+                        group[
+                            "context"
+                        ].get(
+                            "source_key"
+                        ),
+
+                    "source_account_id":
+                        account_id,
+                }
+
+
+                try:
+
+                    log_job(
+                        "transfer",
+                        job_id,
+                        "SOURCE_GROUP_STARTED",
+                        (
+                            f"{label} | "
+                            f"{source_ref} | "
+                            f"{len(group_rows)} آیتم"
+                        ),
+                    )
+
+
+                    run_destination(
+                        telegram_client,
+                        account,
+                        extraction_context,
+                        destination,
+                        group_rows,
+                        mark,
+                    )
+
+
+                    log_job(
+                        "transfer",
+                        job_id,
+                        "SOURCE_GROUP_FINISHED",
+                        (
+                            f"{label} | "
+                            f"{source_ref} | "
+                            f"{len(group_rows)} آیتم"
+                        ),
+                    )
+
+
+                except Exception as exc:
+
+                    error = (
+                        f"{type(exc).__name__}: "
+                        f"{exc}"
+                    )[:2000]
+
+
+                    group_errors.append(
+                        error
+                    )
+
+
+                    for row in group_rows:
+
+                        mark(
+                            row[
+                                "transfer_item_id"
+                            ],
+                            "failed",
+                            error=error,
+                        )
+
+
+                    log_job(
+                        "transfer",
+                        job_id,
+                        "SOURCE_GROUP_FAILED",
+                        (
+                            f"{label} | "
+                            f"{source_ref} | "
+                            f"{error}"
+                        ),
+                        "error",
+                    )
+
+
+            with closing(
+                db_connect()
+            ) as conn:
+
+                failed = conn.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM transfer_job_items
+                    WHERE
+                        destination_id=?
+                        AND status='failed'
+                    """,
+                    (
+                        destination[
+                            "id"
+                        ],
+                    ),
+                ).fetchone()[0]
+
+
+                status = (
+                    "failed"
+                    if failed
+                    else "completed"
+                )
+
+
+                destination_error = (
+                    " | ".join(
+                        group_errors
+                    )[:2000]
+                    if group_errors
+                    else None
+                )
+
+
+                conn.execute(
+                    """
+                    UPDATE transfer_destinations
+                    SET
+                        status=?,
+                        last_error=?,
+                        updated_at=CURRENT_TIMESTAMP
+                    WHERE id=?
+                    """,
+                    (
+                        status,
+                        destination_error,
+                        destination[
+                            "id"
+                        ],
+                    ),
+                )
+
+
+                conn.commit()
+
+
+            if failed:
+
+                errors_seen.append(
+                    f"{label}: {failed} آیتم ناموفق"
+                )
+
+
+            destination_results.append(
+                {
+                    "destination_id":
+                        destination[
+                            "id"
+                        ],
+
+                    "provider_code":
+                        provider,
+
+                    "status":
+                        status,
+
+                    "pending":
+                        len(
+                            rows
+                        ),
+
+                    "failed":
+                        failed,
+
+                    "source_groups":
+                        len(
+                            groups
+                        ),
+                }
             )
+
+
+        elapsed = round(
+            time.perf_counter()
+            - started,
+            3,
+        )
+
+
+        with closing(
+            db_connect()
+        ) as conn:
+
+            counts = transfer_counts(
+                conn,
+                job_id,
+            )
+
+
+            status = (
+                "failed"
+                if (
+                    counts[
+                        "failed"
+                    ]
+                    or errors_seen
+                )
+                else "completed"
+            )
+
+
+            error_text = (
+                " | ".join(
+                    errors_seen
+                )[:2000]
+                if errors_seen
+                else None
+            )
+
+
             conn.execute(
                 """
-                UPDATE transfer_runs SET status=?, transferred_count=?, failed_count=?,
-                    skipped_count=?, elapsed_seconds=?, error_text=?, finished_at=CURRENT_TIMESTAMP
+                UPDATE transfer_jobs
+                SET
+                    status=?,
+                    last_error=?,
+                    updated_at=CURRENT_TIMESTAMP
                 WHERE id=?
                 """,
                 (
                     status,
-                    counts["transferred"],
-                    counts["failed"],
-                    counts["skipped"],
+                    error_text,
+                    job_id,
+                ),
+            )
+
+
+            conn.execute(
+                """
+                UPDATE transfer_runs
+                SET
+                    status=?,
+                    transferred_count=?,
+                    failed_count=?,
+                    skipped_count=?,
+                    elapsed_seconds=?,
+                    error_text=?,
+                    finished_at=CURRENT_TIMESTAMP
+                WHERE id=?
+                """,
+                (
+                    status,
+                    counts[
+                        "transferred"
+                    ],
+                    counts[
+                        "failed"
+                    ],
+                    counts[
+                        "skipped"
+                    ],
                     elapsed,
                     error_text,
                     run_id,
                 ),
             )
+
+
             conn.commit()
+
 
         log_job(
             "transfer",
             job_id,
-            "RUN_FINISHED" if status == "completed" else "RUN_PARTIAL_FAILED",
-            f"انتقال چندمقصدی پایان یافت: {counts}",
-            "info" if status == "completed" else "error",
+            (
+                "RUN_FINISHED"
+                if status
+                == "completed"
+                else "RUN_PARTIAL_FAILED"
+            ),
+            (
+                "Query Transfer پایان یافت: "
+                f"{counts}"
+            ),
+            (
+                "info"
+                if status
+                == "completed"
+                else "error"
+            ),
         )
+
+
         payload = {
-            "ok": status == "completed",
-            "job_id": job_id,
-            "status": status,
-            "counts": counts,
-            "destinations": destination_results,
-            "elapsed_seconds": elapsed,
-            "message": "اجرای انتقال همه مقصدها تمام شد."
-            if status == "completed"
-            else "اجرای انتقال پایان یافت، اما بعضی مقصدها یا آیتم‌ها خطا داشتند.",
+            "ok":
+                status
+                == "completed",
+
+            "job_id":
+                job_id,
+
+            "status":
+                status,
+
+            "counts":
+                counts,
+
+            "destinations":
+                destination_results,
+
+            "elapsed_seconds":
+                elapsed,
+
+            "message":
+                (
+                    "اجرای انتقال همه مقصدها تمام شد."
+                    if status
+                    == "completed"
+                    else
+                    "اجرای انتقال پایان یافت، "
+                    "اما بعضی آیتم‌ها خطا داشتند."
+                ),
         }
+
+
         if error_text:
-            payload["error"] = error_text
-        return jsonify(payload), 200 if status == "completed" else 500
+
+            payload[
+                "error"
+            ] = error_text
+
+
+        return jsonify(
+            payload
+        ), (
+            200
+            if status
+            == "completed"
+            else 500
+        )
