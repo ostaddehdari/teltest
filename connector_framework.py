@@ -162,6 +162,13 @@ class TelegramSourceConnector(SourceConnector):
         )
 
 
+class EitaaSourceConnector(SourceConnector):
+    def health(self):
+        return ConnectorHealth(status="healthy", summary="کرولر کانال عمومی ایتا آماده است.",
+            details={"implemented": True, "public_only": True, "requires_account": False},
+            checked_at=utc_now())
+
+
 COMMON_CAPABILITIES = {
     "text": True,
     "media": True,
@@ -196,6 +203,16 @@ CONNECTOR_DEFINITIONS = (
             "required": ["telegram_api_id", "telegram_api_hash"],
             "account_type": "user_session",
         },
+    ),
+    ConnectorDefinition(
+        code="eitaa", name="Eitaa", display_name="ایتا",
+        description="استخراج کانال‌های عمومی ایتا با صفحه‌بندی",
+        icon="fa-solid fa-message", position=15, lifecycle="experimental",
+        adapter_key="eitaa.public_html", adapter_version="1.0.0",
+        enabled=True, selectable=True, requires_account=False,
+        capabilities={**COMMON_CAPABILITIES, "public_sources": True,
+                      "private_invites": False, "groups": False},
+        config_schema={"required": ["source_ref"], "account_type": "none"},
     ),
     ConnectorDefinition(
         code="instagram",
@@ -323,6 +340,7 @@ class ConnectorRegistry:
             code: (
                 TelegramSourceConnector(definition)
                 if code == "telegram"
+                else EitaaSourceConnector(definition) if code == "eitaa"
                 else PlannedSourceConnector(definition)
             )
             for code, definition in self.definitions.items()
