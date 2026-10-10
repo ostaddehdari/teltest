@@ -95,7 +95,7 @@ def parse_page(html, username):
         for image in node.select(".etme_widget_message_photo_wrap, .etme_widget_message_photo"):
             match = IMAGE_RE.search(image.get("style") or "")
             if match:
-                add("photo", match.group(1).strip(" \\"'"))
+                add("photo", match.group(1).strip().strip(chr(34)).strip(chr(39)))
         for video in node.select("video[src], video source[src]"):
             add("video", video.get("src"))
         for a in node.select("a.etme_widget_message_document_wrap[href], a.etme_widget_message_video_player[href]"):
