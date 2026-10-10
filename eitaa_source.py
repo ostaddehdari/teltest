@@ -24,7 +24,7 @@ from content_rules import apply_content_rules, sync_content_index
 
 BASE_PATH = "/teltest"
 CHANNEL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]{3,63}$")
-IMAGE_RE = re.compile(r"background-image\\s*:\\s*url\\(\\s*['\\\"]?([^)'\\\"]+)", re.I)
+IMAGE_RE = re.compile(r'background-image\s*:\s*url\(\s*["\\\']?([^)"\\\']+)', re.I)
 MAX_PAGE_BYTES = 5 * 1024 * 1024
 
 
@@ -269,6 +269,15 @@ def persist_messages(job_id, result, elapsed):
             """, (job_id,content_id,evaluation["processed_text"],int(evaluation["excluded"]),
                   evaluation["reason"],hashlib.sha256(json_dump(rules).encode()).hexdigest()))
             sync_content_index(conn,content_id,item["raw_text"])
+            from urllib.parse import urlparse
+            urls = [item["metadata"]["eitaa"]["url"]] + item["metadata"].get("links", [])
+            for url in urls:
+                if not url.startswith(("https://", "http://")):
+                    continue
+                conn.execute("""
+                    INSERT OR IGNORE INTO content_links(content_id,url,domain,link_text)
+                    VALUES(?,?,?,NULL)
+                """, (content_id,url,urlparse(url).hostname))
             updated += int(bool(old))
             inserted += int(not old)
         cursor = max([int(job["cursor_external_id"] or 0)] +
