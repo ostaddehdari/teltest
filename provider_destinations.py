@@ -3,6 +3,8 @@ import mimetypes
 import shutil
 
 from contextlib import closing
+from urllib.parse import urlparse
+from eitaa_source import safe_media_url
 from pathlib import Path
 
 import httpx
@@ -281,6 +283,73 @@ async def send_external(provider, token, destination_ref, kind, text, downloaded
             return result
         return await rubika_send_message(token, destination_ref, text)
     raise RuntimeError("پروایدر انتقال پشتیبانی نمی‌شود.")
+
+
+
+async def download_eitaa_media(url, tmp_dir, media_index):
+    from pathlib import Path
+    target_url = safe_media_url(url)
+    if not target_url:
+        raise RuntimeError("نشانی رسانه ایتا مجاز نیست.")
+    target = Path(tmp_dir) / f"eitaa-media-{media_index}"
+    total = 0
+    async with httpx.AsyncClient(timeout=httpx.Timeout(300, connect=15), follow_redirects=False) as client:
+        async with client.stream("GET", target_url) as response:
+            if response.status_code != 200:
+                raise RuntimeError(f"دانلود رسانه ایتا: HTTP {response.status_code}")
+            with target.open("wb") as f:
+                async for chunk in response.aiter_bytes():
+                    total += len(chunk)
+                    if total > 100 * 1024 * 1024:
+                        raise RuntimeError("فایل رسانه از سقف ۱۰۰ مگابایت بیشتر است.")
+                    f.write(chunk)
+    return str(target)
+
+
+async def execute_eitaa_destination(extraction, destination, rows, mark):
+    tmp = TMP_ROOT / f"job-{destination['transfer_job_id']}" / f"destination-{destination['id']}"
+    tmp.mkdir(parents=True, exist_ok=True)
+    provider = normalize_provider(destination["provider_code"])
+    token = provider_token(provider)
+    rules = normalize_rules(destination.get("rules_json") or destination.get("rules") or {})
+    try:
+        if provider == "telegram_user":
+            raise RuntimeError("مقصد اکانت کاربری تلگرام از منبع ایتا هنوز پشتیبانی نمی‌شود؛ از Telegram Bot استفاده کنید.")
+        for row in rows:
+            item_id = row["transfer_item_id"]
+            evaluation = apply_content_rules(row.get("processed_text") or row.get("raw_text") or "", rules)
+            if evaluation["excluded"]:
+                mark(item_id, "skipped", error="Destination rules excluded this post.")
+                continue
+            text = evaluation["processed_text"]
+            media = row.get("media_json") or "[]"
+            if isinstance(media, str):
+                import json
+                media = json.loads(media)
+            media = [m for m in media if isinstance(m, dict) and m.get("url")]
+            mark(item_id, "transferring")
+            try:
+                sent = None
+                if not media:
+                    if text:
+                        sent = await send_external(provider, token, destination["destination_ref"], "text", text, None)
+                    else:
+                        mark(item_id, "skipped", error="پست فاقد متن یا رسانه است.")
+                        continue
+                else:
+                    for idx, item in enumerate(media):
+                        downloaded = await download_eitaa_media(item["url"], tmp, idx)
+                        try:
+                            sent = await send_external(provider, token, destination["destination_ref"],
+                                                       item.get("kind") or "document",
+                                                       text if idx == 0 else "", downloaded)
+                        finally:
+                            Path(downloaded).unlink(missing_ok=True)
+                mark(item_id, "transferred", destination_external_id=result_message_id(sent))
+            except Exception as exc:
+                mark(item_id, "failed", error=f"{type(exc).__name__}: {exc}"[:2000])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 async def execute_destination(
@@ -739,6 +808,9 @@ async def execute_destination(
 
 
 def run_destination(telegram_client, account, extraction, destination, rows, mark):
+    if extraction["connector_code"] == "eitaa":
+        asyncio.run(execute_eitaa_destination(extraction, destination, rows, mark))
+        return
     with account_lock(account["id"]):
         asyncio.run(execute_destination(telegram_client(account), extraction, destination, rows, mark))
 
